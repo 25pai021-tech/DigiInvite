@@ -2,6 +2,8 @@ from fastapi import FastAPI, Depends, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 from db import supabase
+from fastapi import File, UploadFile
+import uuid
 
 app = FastAPI(title="DigiInvite API")
 
@@ -61,3 +63,20 @@ def save_invitation(body: InvitationIn, user=Depends(get_current_user)):
     record["user_id"] = user.id
     result = supabase.table("invitations").insert(record).execute()
     return {"success": True, "invitation": result.data[0]}
+
+@app.post("/uploadImage")
+def upload_image(file: UploadFile = File(...)):
+    # make a unique filename so uploads never overwrite each other
+    ext = file.filename.split(".")[-1]
+    path = f"{uuid.uuid4()}.{ext}"
+
+    file_bytes = file.file.read()
+    supabase.storage.from_("images").upload(
+        path,
+        file_bytes,
+        {"content-type": file.content_type},
+    )
+
+    # get a link the frontend can use to show the image
+    url = supabase.storage.from_("images").get_public_url(path)
+    return {"success": True, "path": path, "url": url}

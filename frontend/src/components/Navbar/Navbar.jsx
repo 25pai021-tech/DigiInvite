@@ -1,11 +1,24 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
+
+
 import './Navbar.css';
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate('/login');
+  }
 
   return (
     <nav className="navbar">
@@ -35,8 +48,14 @@ export default function Navbar() {
             {theme === 'dark' ? '☀️' : '🌙'}
           </div>
         </button>
-        <Link to="/login" className="btn-ghost hide-mobile">Sign in</Link>
-        <Link to="/register" className="btn-nav-primary">Get started</Link>
+        {user ? (
+          <button className="btn-nav-primary" onClick={handleLogout}>Log out</button>
+        ) : (
+          <>
+            <Link to="/login" className="btn-ghost hide-mobile">Sign in</Link>
+            <Link to="/register" className="btn-nav-primary">Get started</Link>
+          </>
+        )}
       </div>
 
       <button

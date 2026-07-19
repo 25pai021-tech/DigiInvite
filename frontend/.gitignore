@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# the env file created by uzma to connect frontend to backend
+.env
+
+

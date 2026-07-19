@@ -1,6 +1,20 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Dashboard.css';
 
 export default function Dashboard() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) navigate('/login');
+  }, [loading, user, navigate]);
+
+  if (loading) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>Loading…</div>;
+  if (!user) return null;
+
+  const name = user.user_metadata?.full_name || user.email;
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">

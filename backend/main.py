@@ -3,10 +3,18 @@ from pydantic import BaseModel
 from typing import Optional
 from db import supabase
 from fastapi import File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 import uuid
 
 app = FastAPI(title="DigiInvite API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # quick test route
 @app.get("/")
 def home():

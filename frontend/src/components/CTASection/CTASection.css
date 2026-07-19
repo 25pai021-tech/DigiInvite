@@ -1,0 +1,88 @@
+.cta-section {
+  padding: 96px 48px;
+  text-align: center;
+  border-top: 1px solid var(--divider);
+  transition: background 0.3s;
+}
+
+[data-theme="light"] .cta-section {
+  background: linear-gradient(135deg, #f0ebff 0%, #fff8f0 100%);
+}
+[data-theme="dark"] .cta-section {
+  background: linear-gradient(135deg, rgba(108,59,255,0.08) 0%, var(--bg2) 50%, rgba(212,175,55,0.06) 100%);
+}
+
+.cta-inner { max-width: 640px; margin: 0 auto; }
+
+.cta-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 18px;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.cta-section p {
+  color: var(--muted);
+  font-size: 1rem;
+  margin-bottom: 36px;
+  line-height: 1.75;
+}
+
+.cta-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* reuse hero button classes */
+.btn-cta-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--purple-light), var(--purple-dark));
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 14px 28px;
+  cursor: pointer;
+  box-shadow: 0 6px 28px var(--purple-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+.btn-cta-main:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 36px var(--purple-glow);
+}
+
+.btn-cta-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1.5px solid var(--card-border);
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 14px 22px;
+  cursor: pointer;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s, border-color 0.2s, color 0.2s;
+  text-decoration: none;
+}
+.btn-cta-outline:hover {
+  transform: translateY(-3px);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+@media (max-width: 768px) {
+  .cta-section { padding: 64px 20px; }
+  .cta-btns { flex-direction: column; align-items: center; }
+  .btn-cta-main, .btn-cta-outline { width: 100%; justify-content: center; }
+}

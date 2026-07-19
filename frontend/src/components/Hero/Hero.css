@@ -1,0 +1,277 @@
+.hero {
+  min-height: 100vh;
+  padding: calc(var(--nav-h) + 60px) 48px 80px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  transition: background 0.3s;
+}
+
+[data-theme="light"] .hero {
+  background: linear-gradient(140deg, #f0ebff 0%, #faf8ff 40%, #ffe8f5 80%, #fff5e0 100%);
+}
+[data-theme="dark"] .hero {
+  background:
+    radial-gradient(ellipse 70% 60% at 65% 40%, rgba(108,59,255,0.14) 0%, transparent 70%),
+    var(--bg);
+}
+
+/* ── Content ── */
+.hero-content {
+  max-width: 580px;
+  z-index: 2;
+  position: relative;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  padding: 6px 16px;
+  border-radius: 50px;
+  margin-bottom: 30px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--badge-text);
+  letter-spacing: 0.02em;
+}
+.hero-badge-icon { font-size: 0.85rem; }
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.8rem, 5.5vw, 4.6rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -2px;
+  margin-bottom: 26px;
+  color: var(--text);
+}
+.word-purple { color: var(--purple); font-style: italic; }
+.word-gold   { color: var(--gold); }
+
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--muted);
+  line-height: 1.78;
+  margin-bottom: 40px;
+  max-width: 490px;
+}
+
+/* ── CTA buttons ── */
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.btn-cta-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--purple-light), var(--purple-dark));
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 14px 28px;
+  cursor: pointer;
+  box-shadow: 0 6px 28px var(--purple-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+.btn-cta-main:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 36px var(--purple-glow);
+}
+
+.btn-cta-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1.5px solid var(--card-border);
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 14px 22px;
+  cursor: pointer;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s, border-color 0.2s;
+  text-decoration: none;
+}
+.btn-cta-outline:hover {
+  transform: translateY(-3px);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+/* ── Trust badges ── */
+.hero-trust {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.trust-icon { font-size: 0.9rem; }
+
+/* ── Floating cards ── */
+.hero-visual {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(50%, 580px);
+  height: 560px;
+  pointer-events: none;
+}
+
+.inv-card {
+  position: absolute;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--hero-shadow);
+}
+
+/* Purple wedding card */
+.inv-card-purple {
+  width: 280px; height: 380px;
+  right: 60px; top: 40px;
+  background: linear-gradient(155deg, #3b1fa0 0%, #5a2dce 40%, #2d0f7a 100%);
+  animation: floatA 5.5s ease-in-out infinite;
+  z-index: 2;
+}
+
+/* Pink engagement card */
+.inv-card-pink {
+  width: 240px; height: 310px;
+  right: 300px; top: 160px;
+  background: linear-gradient(155deg, #f8c8d8 0%, #f5b8cc 50%, #f2a0b8 100%);
+  animation: floatB 5.5s ease-in-out infinite;
+  animation-delay: -2.5s;
+  z-index: 1;
+}
+
+/* Gold anniversary card */
+.inv-card-gold {
+  width: 200px; height: 270px;
+  right: 20px; top: 230px;
+  background: linear-gradient(155deg, #b8860b 0%, #d4af37 50%, #a07810 100%);
+  animation: floatC 5.5s ease-in-out infinite;
+  animation-delay: -4s;
+  z-index: 3;
+}
+
+@keyframes floatA {
+  0%, 100% { transform: translateY(0px)   rotate(-6deg); }
+  50%       { transform: translateY(-16px) rotate(-3deg); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translateY(0px)   rotate(6deg); }
+  50%       { transform: translateY(-14px) rotate(9deg); }
+}
+@keyframes floatC {
+  0%, 100% { transform: translateY(0px)   rotate(-2deg); }
+  50%       { transform: translateY(-18px) rotate(1deg); }
+}
+
+/* Card inner layout */
+.ic-inner {
+  padding: 28px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ic-eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 16px;
+}
+.ic-eyebrow-dark { color: rgba(80,40,60,0.55); }
+
+.ic-names {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.ic-names-dark {
+  font-size: 1.6rem;
+  font-style: italic;
+  font-weight: 600;
+  color: #4a1f38;
+  text-align: left;
+}
+.ic-names-sm { font-size: 1.5rem; font-style: italic; font-weight: 600; text-align: left; }
+
+.ic-divider {
+  width: 40px; height: 2px;
+  background: rgba(255,255,255,0.28);
+  margin: 0 auto 14px;
+}
+.ic-divider-dark {
+  background: rgba(150,60,90,0.3);
+  margin: 10px 0;
+}
+
+.ic-date {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.ic-date-dark { color: rgba(80,40,60,0.6); text-align: left; }
+
+.ic-venue {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  margin-top: 6px;
+}
+
+.ic-watermark {
+  margin-top: auto;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.28);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .hero-visual { width: 44%; right: 20px; }
+  .inv-card-purple { width: 230px; height: 315px; }
+  .inv-card-pink   { width: 195px; height: 255px; }
+  .inv-card-gold   { width: 165px; height: 225px; }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: calc(var(--nav-h) + 40px) 20px 60px;
+    min-height: auto;
+  }
+  .hero-visual { display: none; }
+  .hero-cta { flex-direction: column; align-items: flex-start; }
+  .btn-cta-main,
+  .btn-cta-outline { width: 100%; justify-content: center; }
+}

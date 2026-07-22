@@ -19,6 +19,7 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="dashboard-header">
         <h1>My Dashboard</h1>
+        <h2>Welcome, {name} </h2>
         <p>Manage your invitations, RSVPs, and downloads.</p>
         <button className="btn-dash-primary">+ Create New Invitation</button>
       </div>

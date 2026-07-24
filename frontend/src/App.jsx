@@ -7,6 +7,7 @@ import Home      from './pages/Home';
 import Login     from './pages/Login';
 import Register  from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import CreateInvitation from './pages/CreateInvitation/CreateInvitation';
 
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/login"     element={<Login />} />
             <Route path="/register"  element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/create-invitation" element={<CreateInvitation />} />
             <Route path="/templates" element={<ComingSoon title="Template Gallery" />} />
             <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
             <Route path="/editor"    element={<ComingSoon title="Invitation Editor" />} />

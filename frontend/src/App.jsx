@@ -9,6 +9,11 @@ import Register  from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreateInvitation from './pages/CreateInvitation/CreateInvitation';
 
+import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
+
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
   return (
@@ -36,26 +41,32 @@ function ComingSoon({ title }) {
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Navbar />
-        <main>
-          <Routes>
-            <Route path="/"          element={<Home />} />
-            <Route path="/login"     element={<Login />} />
-            <Route path="/register"  element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create-invitation" element={<CreateInvitation />} />
-            <Route path="/templates" element={<ComingSoon title="Template Gallery" />} />
-            <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
-            <Route path="/editor"    element={<ComingSoon title="Invitation Editor" />} />
-            <Route path="/pricing"   element={<ComingSoon title="Pricing" />} />
-            <Route path="/about"     element={<ComingSoon title="About Us" />} />
-            <Route path="/contact"   element={<ComingSoon title="Contact" />} />
-            <Route path="*"          element={<ComingSoon title="Page Not Found" />} />
-          </Routes>
-        </main>
-        <Footer />
-      </BrowserRouter>
+      <AdminAuthProvider>
+
+        <BrowserRouter>
+          <Navbar />
+          <main>
+            <Routes>
+              <Route path="/"          element={<Home />} />
+              <Route path="/login"     element={<Login />} />
+              <Route path="/register"  element={<Register />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/create-invitation" element={<CreateInvitation />} />
+              <Route path="/templates" element={<ComingSoon title="Template Gallery" />} />
+              <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
+              <Route path="/editor"    element={<ComingSoon title="Invitation Editor" />} />
+              <Route path="/pricing"   element={<ComingSoon title="Pricing" />} />
+              <Route path="/about"     element={<ComingSoon title="About Us" />} />
+              <Route path="/contact"   element={<ComingSoon title="Contact" />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<ProtectedAdminRoute> <AdminDashboard /> </ProtectedAdminRoute>}/>
+              <Route path="*"          element={<ComingSoon title="Page Not Found" />} />
+            </Routes>
+          </main>
+          <Footer />
+        </BrowserRouter>
+
+      </AdminAuthProvider>
     </ThemeProvider>
   );
 }

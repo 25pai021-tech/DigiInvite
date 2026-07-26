@@ -21,7 +21,13 @@ export default function Dashboard() {
         <h1>My Dashboard</h1>
         <h2>Welcome, {name} </h2>
         <p>Manage your invitations, RSVPs, and downloads.</p>
-        <button className="btn-dash-primary">+ Create New Invitation</button>
+        
+        <button
+  className="btn-dash-primary"
+  onClick={() => navigate("/create-invitation")}
+>
+  + Create New Invitation
+</button>
       </div>
 
       <div className="dashboard-grid">

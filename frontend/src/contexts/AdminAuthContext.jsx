@@ -1,28 +1,29 @@
-// this file keeps track of whether an ADMIN is logged in.
-// it is completely separate from AuthContext.jsx (which handles normal
-// user login) so nothing here touches your teammate's login code.
-
+// Keeps track of whether an ADMIN is logged in.
+// The real password check now happens in the backend / database.
 import { createContext, useContext, useState } from 'react';
 
 const AdminAuthContext = createContext();
-
-// TODO: replace this hardcoded check with a real backend/DB check later.
-// For now this is enough to gate the /admin routes.
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'digiinvite@admin123';
+const API_URL = 'http://localhost:8000';
 
 export function AdminAuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(
     () => sessionStorage.getItem('digiinvite_admin') === 'true'
   );
 
-  function login(username, password) {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+  async function login(username, password) {
+    try {
+      const res = await fetch(`${API_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) return false;
       sessionStorage.setItem('digiinvite_admin', 'true');
       setIsAdmin(true);
       return true;
+    } catch {
+      return false;
     }
-    return false;
   }
 
   function logout() {

@@ -9,6 +9,7 @@ import ReviewSubmit from '../../components/ReviewSubmit/ReviewSubmit';
 import SuccessPage from '../../components/SuccessPage/SuccessPage';
 import Button from '../../components/Shared/Button';
 import Card from '../../components/Shared/Card';
+import { submitInvitationRequest } from '../../lib/submitInvitationRequest';
 
 import '../../styles/createInvitation.css';
 import './CreateInvitation.css';
@@ -36,32 +37,6 @@ const EMPTY_DESIGN = {
   additionalNotes: '',
 };
 
-function generateRequestId() {
-  const stamp = Date.now().toString(36).toUpperCase().slice(-5);
-  return `DI-${stamp}`;
-}
-
-/**
- * Phase 11 (future): swap this local-state submit for a Supabase insert
- * into `invitation_requests`, uploading files to Supabase Storage first
- * and storing their resulting URLs instead of File objects.
- *
- * async function submitToSupabase(payload) {
- *   const { data, error } = await supabase
- *     .from('invitation_requests')
- *     .insert([{ ...payload, status: 'Pending' }])
- *     .select()
- *     .single();
- *   if (error) throw error;
- *   return data;
- * }
- */
-async function mockSubmit(payload) {
-  // Simulates network latency until Supabase is wired in.
-  await new Promise((resolve) => setTimeout(resolve, 900));
-  return { id: generateRequestId(), ...payload, status: 'Pending', created_at: new Date().toISOString() };
-}
-
 export default function CreateInvitation() {
   const navigate = useNavigate();
 
@@ -71,6 +46,7 @@ export default function CreateInvitation() {
   const [detailErrors, setDetailErrors] = useState({});
   const [design, setDesign] = useState(EMPTY_DESIGN);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [requestId, setRequestId] = useState(null);
 
   const updateDetails = (field, value) => {
@@ -115,17 +91,13 @@ export default function CreateInvitation() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
-      const result = await mockSubmit({
-        event_type: eventType,
-        ...details,
-        theme: design.theme,
-        color: design.color,
-        instructions: design.instructions,
-        additional_notes: design.additionalNotes,
-      });
+      const result = await submitInvitationRequest({ eventType, details, design });
       setRequestId(result.id);
       setStep(4);
+    } catch (err) {
+      setSubmitError(err.message || 'Something went wrong submitting your request. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -169,6 +141,7 @@ export default function CreateInvitation() {
               onEditStep={setStep}
               onSubmit={handleSubmit}
               submitting={submitting}
+              submitError={submitError}
             />
           )}
 

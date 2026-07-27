@@ -5,6 +5,8 @@ from db import supabase
 from fastapi import File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
+import bcrypt
+
 
 app = FastAPI(title="DigiInvite API")
 
@@ -88,3 +90,18 @@ def upload_image(file: UploadFile = File(...)):
     # get a link the frontend can use to show the image
     url = supabase.storage.from_("images").get_public_url(path)
     return {"success": True, "path": path, "url": url}
+
+
+class AdminLoginIn(BaseModel):
+    username: str
+    password: str
+
+@app.post("/admin/login")
+def admin_login(body: AdminLoginIn):
+    res = supabase.table("admins").select("*").eq("username", body.username).execute()
+    if not res.data:
+        raise HTTPException(401, "Invalid admin credentials")
+    admin = res.data[0]
+    if not bcrypt.checkpw(body.password.encode(), admin["password_hash"].encode()):
+        raise HTTPException(401, "Invalid admin credentials")
+    return {"success": True, "username": admin["username"]}

@@ -49,10 +49,6 @@ export default function Navbar() {
           </div>
         </button>
 
-        <Link to="/admin/login" className="btn-ghost hide-mobile">
-          Admin
-        </Link>
-
         {user ? (
           <button className="btn-nav-primary" onClick={handleLogout}>Log out</button>
         ) : (

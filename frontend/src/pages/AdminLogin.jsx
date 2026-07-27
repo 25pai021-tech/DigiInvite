@@ -10,9 +10,9 @@ export default function AdminLogin() {
   const { login } = useAdminAuth();
   const navigate = useNavigate();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const ok = login(username, password);
+    const ok = await login(username, password);
     if (ok) {
       navigate('/admin');
     } else {

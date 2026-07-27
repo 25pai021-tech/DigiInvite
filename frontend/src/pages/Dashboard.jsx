@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
-
-const NAV_LINKS = ['AI Generator', 'Templates', 'Editor', 'Dashboard', 'Pricing'];
 
 const STATS = [
   { key: 'invitations', label: 'My Invitations', value: 0, icon: <InvitationIcon />, accent: '#7dd3fc' },
@@ -12,17 +11,23 @@ const STATS = [
   { key: 'downloads', label: 'Downloads', value: 0, icon: <DownloadIcon />, accent: '#f472b6' },
 ];
 
-/**
- * userName: pass the logged-in user's display name, e.g. from auth context.
- * activeNav: which nav link to highlight (defaults to 'Dashboard').
- */
-export default function Dashboard({ userName = 'User', activeNav = 'Dashboard' }) {
+export default function Dashboard() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) navigate('/login');
+  }, [loading, user, navigate]);
+
+  if (loading) {
+    return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>Loading…</div>;
+  }
+  if (!user) return null;
+
+  const userName = user.user_metadata?.full_name || user.email;
 
   return (
     <div className="di-root dash">
-      <Navbar activeNav={activeNav} />
-
       <div className="dash-page">
         <div className="dash-hero">
           <div>
@@ -47,49 +52,6 @@ export default function Dashboard({ userName = 'User', activeNav = 'Dashboard' }
         </div>
       </div>
     </div>
-  );
-}
-
-function Navbar({ activeNav }) {
-  return (
-    <header className="dash-nav">
-      <div className="dash-nav__brand">
-        <span className="dash-nav__mark">✦</span>
-        Digi<span className="dash-nav__brand-accent">Invite</span>
-      </div>
-
-      <nav className="dash-nav__links">
-        {NAV_LINKS.map((link) => (
-          <a
-            key={link}
-            href={`/${link.toLowerCase().replace(/\s+/g, '-')}`}
-            className={`dash-nav__link ${link === activeNav ? 'dash-nav__link--active' : ''}`}
-          >
-            {link}
-          </a>
-        ))}
-      </nav>
-
-      <div className="dash-nav__actions">
-        <ThemeToggle />
-        <a href="/admin" className="dash-nav__admin">Admin</a>
-        <button className="dash-nav__logout">Log out</button>
-      </div>
-    </header>
-  );
-}
-
-function ThemeToggle() {
-  const [on, setOn] = React.useState(true);
-  return (
-    <button
-      className={`dash-toggle ${on ? 'dash-toggle--on' : ''}`}
-      onClick={() => setOn((v) => !v)}
-      aria-label="Toggle theme"
-      aria-pressed={on}
-    >
-      <span className="dash-toggle__knob" />
-    </button>
   );
 }
 

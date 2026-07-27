@@ -1,19 +1,37 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
 
-const STATS = [
-  { key: 'invitations', label: 'My Invitations', value: 0, icon: <InvitationIcon />, accent: '#7dd3fc' },
-  { key: 'drafts', label: 'Saved Drafts', value: 0, icon: <DraftIcon />, accent: '#fb923c' },
-  { key: 'rsvps', label: 'RSVP Responses', value: 0, icon: <RsvpIcon />, accent: '#c084fc' },
-  { key: 'downloads', label: 'Downloads', value: 0, icon: <DownloadIcon />, accent: '#f472b6' },
-];
 
 export default function Dashboard() {
+  
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [invitationCount, setInvitationCount] = useState(0);
+  const STATS = [
+    { key: 'invitations', label: 'My Invitations', value: invitationCount, icon: <InvitationIcon />, accent: '#7dd3fc' },
+    { key: 'drafts', label: 'Saved Drafts', value: 0, icon: <DraftIcon />, accent: '#fb923c' },
+    { key: 'rsvps', label: 'RSVP Responses', value: 0, icon: <RsvpIcon />, accent: '#c084fc' },
+    { key: 'downloads', label: 'Downloads', value: 0, icon: <DownloadIcon />, accent: '#f472b6' },
+  ];
+
+  useEffect(() => {
+    if (!user) return;
+
+    async function loadCounts() {
+      const { count, error } = await supabase
+        .from('invitation_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (!error) setInvitationCount(count || 0);
+    }
+
+    loadCounts();
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');

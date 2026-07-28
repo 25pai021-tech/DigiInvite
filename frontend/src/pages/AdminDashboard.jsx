@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import './AdminDashboard.css';
@@ -40,6 +40,7 @@ const TICKETS = [
 
 const NAV_ITEMS = [
   { key: 'overview', label: 'Overview' },
+  { key: 'requests', label: 'Requests' },
   { key: 'users', label: 'Users' },
   { key: 'templates', label: 'Templates' },
   { key: 'invitations', label: 'Invitations' },
@@ -236,6 +237,97 @@ function Support() {
 }
 
 // ---------- Main layout ----------
+const STATUS_OPTIONS = [
+  'Pending', 'Designing', 'Preview Ready',
+  'Revision Requested', 'Approved', 'Paid', 'Completed',
+];
+
+const API_URL = 'http://localhost:8000';
+
+function Requests() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch(`${API_URL}/admin/requests`)
+      .then((res) => res.json())
+      .then((data) => {
+        setRequests(data.requests || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Could not load requests. Is the backend running?');
+        setLoading(false);
+      });
+  }, []);
+
+  async function changeStatus(requestId, newStatus) {
+    try {
+      const res = await fetch(`${API_URL}/admin/updateStatus`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId, status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      // update the row on screen instantly, without reloading
+      setRequests((prev) =>
+        prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r))
+      );
+    } catch {
+      alert('Could not update status. Please try again.');
+    }
+  }
+
+  return (
+    <div>
+      <div className="admin-section-heading">
+        <h2>Invitation Requests</h2>
+        <p>Every request submitted by users. Change the status to move it through the workflow.</p>
+      </div>
+
+      {loading && <div className="admin-card">Loading requests…</div>}
+      {error && <div className="admin-card">{error}</div>}
+
+      {!loading && !error && (
+        <div className="admin-card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Event</th><th>Type</th><th>Host</th>
+                <th>Event Date</th><th>Submitted</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.event_name}</td>
+                  <td>{r.event_type}</td>
+                  <td className="muted">{r.host_name}</td>
+                  <td className="muted">{r.date}</td>
+                  <td className="muted">{new Date(r.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <select
+                      value={r.status}
+                      onChange={(e) => changeStatus(r.id, e.target.value)}
+                    >
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {requests.length === 0 && (
+                <tr><td colSpan="6" className="muted">No requests yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [active, setActive] = useState('overview');
@@ -244,6 +336,7 @@ export default function AdminDashboard() {
 
   const views = {
     overview: <Overview />,
+    requests: <Requests />,
     users: <Users />,
     templates: <Templates />,
     invitations: <Invitations />,

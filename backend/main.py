@@ -105,3 +105,37 @@ def admin_login(body: AdminLoginIn):
     if not bcrypt.checkpw(body.password.encode(), admin["password_hash"].encode()):
         raise HTTPException(401, "Invalid admin credentials")
     return {"success": True, "username": admin["username"]}
+
+
+# ---- ADMIN: list every invitation request ----
+@app.get("/admin/requests")
+def admin_list_requests():
+    result = (
+        supabase.table("invitation_requests")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return {"requests": result.data}
+
+# ---- ADMIN: change a request's status ----
+class StatusUpdateIn(BaseModel):
+    request_id: str
+    status: str
+
+@app.post("/admin/updateStatus")
+def admin_update_status(body: StatusUpdateIn):
+    allowed = ["Pending", "Designing", "Preview Ready",
+               "Revision Requested", "Approved", "Paid", "Completed"]
+    if body.status not in allowed:
+        raise HTTPException(400, "Invalid status")
+
+    result = (
+        supabase.table("invitation_requests")
+        .update({"status": body.status})
+        .eq("id", body.request_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(404, "Request not found")
+    return {"success": True, "request": result.data[0]}

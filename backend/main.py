@@ -1,3 +1,6 @@
+import os
+import io
+from huggingface_hub import InferenceClient
 from fastapi import FastAPI, Depends, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
@@ -139,3 +142,63 @@ def admin_update_status(body: StatusUpdateIn):
     if not result.data:
         raise HTTPException(404, "Request not found")
     return {"success": True, "request": result.data[0]}
+
+
+HF_TOKEN = os.environ.get("HF_TOKEN")
+IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"   # fast, free-friendly image model
+
+def build_prompt(r):
+    parts = [f"An elegant {r.get('theme') or ''} {r.get('event_type') or 'event'} invitation card"]
+    if r.get("bride_name") and r.get("groom_name"):
+        parts.append(f"celebrating {r['bride_name']} and {r['groom_name']}")
+    elif r.get("event_name"):
+        parts.append(f"for {r['event_name']}")
+    if r.get("color"):
+        parts.append(f"in a {r['color']} colour palette")
+    if r.get("instructions"):
+        parts.append(str(r["instructions"]))
+    parts.append("intricate decorative borders, beautiful typography, premium stationery style, high resolution, centered composition")
+    return ", ".join(p for p in parts if p)
+
+class GenerateCardIn(BaseModel):
+    request_id: str
+
+@app.post("/generateCard")
+def generate_card(body: GenerateCardIn):
+    if not HF_TOKEN:
+        raise HTTPException(500, "HF_TOKEN is not set in the backend .env file")
+
+    # 1. get the saved request
+    res = supabase.table("invitation_requests").select("*").eq("id", body.request_id).execute()
+    if not res.data:
+        raise HTTPException(404, "Request not found")
+    row = res.data[0]
+
+    # 2. build the detailed prompt from the form fields
+    prompt = build_prompt(row)
+
+    # 3. ask Hugging Face to generate the image
+    try:
+        client = InferenceClient(api_key=HF_TOKEN)
+        image = client.text_to_image(prompt, model=IMAGE_MODEL)   # returns a PIL image
+    except Exception as e:
+        raise HTTPException(502, f"Image generation failed: {e}")
+
+    # 4. turn the image into PNG bytes
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    image_bytes = buf.getvalue()
+
+    # 5. save it to Supabase Storage
+    path = f"generated/{body.request_id}.png"
+    supabase.storage.from_("design-uploads").upload(
+        path, image_bytes, {"content-type": "image/png", "upsert": "true"}
+    )
+    url = supabase.storage.from_("design-uploads").get_public_url(path)
+
+    # 6. store the image link on the request
+    supabase.table("invitation_requests").update(
+        {"generated_image_url": url}
+    ).eq("id", body.request_id).execute()
+
+    return {"success": True, "prompt": prompt, "image_url": url}

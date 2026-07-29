@@ -34,6 +34,9 @@ export default function Navbar() {
         <li><NavLink to="/templates" onClick={() => setMenuOpen(false)}>Templates</NavLink></li>
         <li><NavLink to="/editor" onClick={() => setMenuOpen(false)}>Editor</NavLink></li>
         <li><NavLink to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</NavLink></li>
+        {user && (
+          <li><NavLink to="/my-requests" onClick={() => setMenuOpen(false)}>My Requests</NavLink></li>
+        )}
         <li><NavLink to="/pricing" onClick={() => setMenuOpen(false)}>Pricing</NavLink></li>
       </ul>
 

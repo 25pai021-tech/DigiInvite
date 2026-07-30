@@ -193,7 +193,8 @@ def admin_update_status(body: StatusUpdateIn):
 
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
-IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"   # fast, free-friendly image model
+# IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"   # fast, free-friendly image model
+IMAGE_MODEL = "black-forest-labs/FLUX.1-dev"
 
 def build_prompt(r):
     parts = [f"An elegant {r.get('theme') or ''} {r.get('event_type') or 'event'} invitation card"]
@@ -348,4 +349,6 @@ def find_matching_template(row):
         .limit(1)
         .execute()
     )
-    return res.data[0] if res.data else None
+    result = res.data[0] if res.data else None
+    print("MATCHED TEMPLATE:", result)   # <-- debug line
+    return result

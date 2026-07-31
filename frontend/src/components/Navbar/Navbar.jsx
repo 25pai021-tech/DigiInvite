@@ -4,7 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-
+import logo from '../../assets/logo.png';
 
 import './Navbar.css';
 
@@ -23,7 +23,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <Link to="/" className="nav-logo">
-        <div className="nav-logo-icon">✦</div>
+        <img src={logo} alt="DigiInvite logo" className="nav-logo-icon" />
         <span className="nav-logo-text">
           Digi<span>Invite</span>
         </span>

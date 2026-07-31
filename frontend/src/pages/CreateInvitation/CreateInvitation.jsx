@@ -64,6 +64,11 @@ export default function CreateInvitation() {
     setDesign((prev) => ({ ...prev, [field]: files }));
   };
 
+  const handleEventTypeSelect = (type) => {
+  setEventType(type);
+  setStep(1);
+  };
+
   const canProceed = () => {
     if (step === 0) return Boolean(eventType);
     if (step === 1) return true; // validated explicitly on Next
@@ -118,7 +123,7 @@ export default function CreateInvitation() {
         <StepIndicator currentStep={step} />
 
         <Card>
-          {step === 0 && <EventType value={eventType} onChange={setEventType} />}
+          {step === 0 && <EventType value={eventType} onChange={handleEventTypeSelect} />}
 
           {step === 1 && (
             <EventDetails
@@ -153,7 +158,7 @@ export default function CreateInvitation() {
             />
           )}
 
-          {step < 3 && (
+          {step > 0 && step < 3 && (
             <div className="di-nav">
               <Button variant="ghost" onClick={goBack}>Back</Button>
               <div className="di-nav__spacer" />

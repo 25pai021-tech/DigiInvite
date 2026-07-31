@@ -124,3 +124,38 @@
   text-decoration: none;
 }
 .auth-switch a:hover { text-decoration: underline; }
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap input {
+  padding-right: 44px; /* room for the eye icon */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.password-toggle-btn:hover {
+  color: var(--purple);
+}
+
+.auth-logo-img {
+  display: block;
+  width: 80px;
+  height: 100px;
+  object-fit: contain;
+  margin: 0 auto 24px;
+}

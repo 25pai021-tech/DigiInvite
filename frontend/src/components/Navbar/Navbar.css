@@ -22,11 +22,9 @@
   text-decoration: none;
 }
 .nav-logo-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--purple), var(--purple-dark));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; color: #fff; flex-shrink: 0;
+  width: 70px;
+  height: 100px;
+  object-fit: contain;
 }
 .nav-logo-text {
   font-family: 'Inter', sans-serif;

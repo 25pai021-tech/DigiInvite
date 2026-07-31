@@ -244,10 +244,14 @@ const STATUS_OPTIONS = [
 
 const API_URL = 'http://localhost:8000';
 
+
 function Requests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState(null);   // the request being viewed in detail
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
 
   useEffect(() => {
     fetch(`${API_URL}/admin/requests`)
@@ -270,20 +274,162 @@ function Requests() {
         body: JSON.stringify({ request_id: requestId, status: newStatus }),
       });
       if (!res.ok) throw new Error();
-      // update the row on screen instantly, without reloading
       setRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r))
       );
+      // keep the open detail view in sync too
+      setSelected((prev) => (prev && prev.id === requestId ? { ...prev, status: newStatus } : prev));
     } catch {
       alert('Could not update status. Please try again.');
     }
   }
 
+  async function generateCard(requestId) {
+    setGenerating(true);
+    setGenError('');
+    try {
+      const res = await fetch(`${API_URL}/generateCard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Generation failed');
+
+      // put the new image on both the list and the open detail view
+      setRequests((prev) =>
+        prev.map((r) => (r.id === requestId ? { ...r, generated_image_url: data.image_url } : r))
+      );
+      setSelected((prev) =>
+        prev && prev.id === requestId ? { ...prev, generated_image_url: data.image_url } : prev
+      );
+    } catch (e) {
+      setGenError(String(e.message || e));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  // ===== DETAIL VIEW (shown when a request is selected) =====
+  if (selected) {
+    const r = selected;
+
+    // helper to show one labelled field (skips empty ones)
+    const Field = ({ label, value }) =>
+      value ? (
+        <div className="detail-field">
+          <span className="detail-label">{label}</span>
+          <span className="detail-value">{value}</span>
+        </div>
+      ) : null;
+
+    // reference images may be stored as an array
+    const refImages = Array.isArray(r.reference_image_urls) ? r.reference_image_urls : [];
+
+    return (
+      <div>
+        <div className="admin-section-heading">
+          <button className="link-btn" onClick={() => setSelected(null)}>← Back to list</button>
+          <h2 style={{ marginTop: 10 }}>{r.event_name || 'Request details'}</h2>
+          <p>Review everything the user submitted before generating or approving.</p>
+        </div>
+
+        <div className="admin-card">
+          <h3 style={{ marginTop: 0 }}>Event</h3>
+          <Field label="Event name" value={r.event_name} />
+          <Field label="Event type" value={r.event_type} />
+          <Field label="Date" value={r.date} />
+          <Field label="Time" value={r.time} />
+          <Field label="Venue" value={r.venue} />
+          <Field label="Map link" value={r.map_link} />
+        </div>
+
+        <div className="admin-card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginTop: 0 }}>People</h3>
+          <Field label="Host name" value={r.host_name} />
+          <Field label="Bride name" value={r.bride_name} />
+          <Field label="Groom name" value={r.groom_name} />
+          <Field label="Phone" value={r.phone} />
+          <Field label="Email" value={r.email} />
+        </div>
+
+        <div className="admin-card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Design preferences</h3>
+          <Field label="Theme" value={r.theme} />
+          <Field label="Colour" value={r.color} />
+          <Field label="Instructions" value={r.instructions} />
+          <Field label="Special message" value={r.special_message} />
+          <Field label="Additional notes" value={r.additional_notes} />
+        </div>
+
+        {(r.couple_photo_url || refImages.length > 0) && (
+          <div className="admin-card" style={{ marginTop: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Uploaded photos</h3>
+            <div className="detail-photos">
+              {r.couple_photo_url && (
+                <a href={r.couple_photo_url} target="_blank" rel="noreferrer">
+                  <img src={r.couple_photo_url} alt="Couple" />
+                </a>
+              )}
+              {refImages.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noreferrer">
+                  <img src={url} alt={`Reference ${i + 1}`} />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        
+        <div className="admin-card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginTop: 0 }}>AI Card</h3>
+
+          <button
+            className="btn-admin-primary"
+            onClick={() => generateCard(r.id)}
+            disabled={generating}
+          >
+            {generating
+              ? 'Generating… (this can take up to a minute)'
+              : r.generated_image_url ? 'Regenerate Card' : 'Generate Card'}
+          </button>
+
+          {genError && (
+            <p style={{ color: '#e0555a', marginTop: 10 }}>{genError}</p>
+          )}
+
+          {r.generated_image_url && !generating && (
+            <div style={{ marginTop: 16 }}>
+              <img
+                src={r.generated_image_url}
+                alt="Generated card"
+                className="generated-preview"
+              />
+              <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                Happy with it? Set the status below to <strong>Preview Ready</strong> so the user can view it.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="admin-card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Status</h3>
+          <select value={r.status} onChange={(e) => changeStatus(r.id, e.target.value)}>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== LIST VIEW (default) =====
   return (
     <div>
       <div className="admin-section-heading">
         <h2>Invitation Requests</h2>
-        <p>Every request submitted by users. Change the status to move it through the workflow.</p>
+        <p>Every request submitted by users. Click "View" to see full details.</p>
       </div>
 
       {loading && <div className="admin-card">Loading requests…</div>}
@@ -295,7 +441,7 @@ function Requests() {
             <thead>
               <tr>
                 <th>Event</th><th>Type</th><th>Host</th>
-                <th>Event Date</th><th>Submitted</th><th>Status</th>
+                <th>Event Date</th><th>Submitted</th><th>Status</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -307,19 +453,19 @@ function Requests() {
                   <td className="muted">{r.date}</td>
                   <td className="muted">{new Date(r.created_at).toLocaleDateString()}</td>
                   <td>
-                    <select
-                      value={r.status}
-                      onChange={(e) => changeStatus(r.id, e.target.value)}
-                    >
+                    <select value={r.status} onChange={(e) => changeStatus(r.id, e.target.value)}>
                       {STATUS_OPTIONS.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
                   </td>
+                  <td className="row-actions">
+                    <button className="link-btn" onClick={() => setSelected(r)}>View</button>
+                  </td>
                 </tr>
               ))}
               {requests.length === 0 && (
-                <tr><td colSpan="6" className="muted">No requests yet.</td></tr>
+                <tr><td colSpan="7" className="muted">No requests yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -328,6 +474,7 @@ function Requests() {
     </div>
   );
 }
+
 
 export default function AdminDashboard() {
   const [active, setActive] = useState('overview');

@@ -247,3 +247,39 @@
     display: none;
   }
 }
+
+.detail-field {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 14px;
+}
+.detail-label {
+  min-width: 140px;
+  color: var(--muted, #9a9a9a);
+}
+.detail-value {
+  color: inherit;
+  word-break: break-word;
+}
+.detail-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.detail-photos img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.generated-preview {
+  max-width: 360px;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: block;
+}

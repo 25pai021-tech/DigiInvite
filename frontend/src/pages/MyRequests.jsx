@@ -19,6 +19,10 @@ export default function MyRequests() {
   const [requests, setRequests] = useState([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
+  const [viewingCard, setViewingCard] = useState(null);   // image URL shown in the popup
+
+  // the user can see the card once the admin has moved it to Preview Ready or beyond
+  const VIEWABLE = ['Preview Ready', 'Approved', 'Paid', 'Completed'];
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -80,13 +84,47 @@ export default function MyRequests() {
                 {r.status}
               </span>
             </div>
+            {VIEWABLE.includes(r.status) && r.generated_image_url && (
+              <button
+                onClick={() => navigate(`/editor/${r.id}`)}
+                style={{ ...btnStyle, marginTop: 12 }}
+              >
+                View & Edit Card
+              </button>
+            )}
+            {VIEWABLE.includes(r.status) && !r.generated_image_url && (
+              <p style={{ color: 'var(--muted, #888)', fontSize: 13, marginTop: 12 }}>
+                Your card is being prepared.
+              </p>
+            )}
             <div style={{ fontSize: 12, color: 'var(--muted, #aaa)', marginTop: 10 }}>
               Requested on {new Date(r.created_at).toLocaleDateString()}
             </div>
           </div>
         ))}
       </div>
+      {viewingCard && (
+        <div
+          onClick={() => setViewingCard(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'grid', placeItems: 'center', zIndex: 1000, padding: 20,
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+            <img
+              src={viewingCard}
+              alt="Your invitation card"
+              style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: 12 }}
+            />
+            <div style={{ marginTop: 16 }}>
+              <button onClick={() => setViewingCard(null)} style={btnStyle}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    
   );
 }
 

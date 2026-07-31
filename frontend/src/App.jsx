@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
-
+import Editor from './pages/Editor';
 import Navbar    from './components/Navbar/Navbar';
 import Footer    from './components/Footer/Footer';
 import Home      from './pages/Home';
@@ -55,7 +55,8 @@ export default function App() {
               <Route path="/create-invitation" element={<CreateInvitation />} />
               <Route path="/templates" element={<ComingSoon title="Template Gallery" />} />
               <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
-              <Route path="/editor"    element={<ComingSoon title="Invitation Editor" />} />
+              <Route path="/editor" element={<ComingSoon title="Invitation Editor" />} />
+              <Route path="/editor/:requestId" element={<Editor />} />
               <Route path="/pricing"   element={<ComingSoon title="Pricing" />} />
               <Route path="/about"     element={<ComingSoon title="About Us" />} />
               <Route path="/contact"   element={<ComingSoon title="Contact" />} />

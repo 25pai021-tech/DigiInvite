@@ -252,6 +252,7 @@ function Requests() {
   const [selected, setSelected] = useState(null);   // the request being viewed in detail
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState('');
+  
 
   useEffect(() => {
     fetch(`${API_URL}/admin/requests`)
@@ -380,7 +381,7 @@ function Requests() {
           </div>
         )}
 
-        
+
         <div className="admin-card" style={{ marginTop: 16 }}>
           <h3 style={{ marginTop: 0 }}>AI Card</h3>
 

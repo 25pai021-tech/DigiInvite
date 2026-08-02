@@ -1,10 +1,26 @@
 import React, { useRef, useState } from 'react';
+import { ICON_CATEGORIES } from './iconLibrary';
 
-const TABS = ['Text', 'Uploads', 'Shapes', 'Background'];
+const TABS = ['Text', 'Uploads', 'Shapes', 'Icons', 'Background', 'Templates', 'Stickers'];
 const SWATCHES = ['#FFFFFF', '#F5F0FF', '#1a1035', '#0D0A1A', '#6C3BFF', '#D4AF37', '#22c55e', '#ef4444'];
+const GRADIENTS = [
+  ['#6C3BFF', '#8B5CFF'],
+  ['#D4AF37', '#F5E7A8'],
+  ['#1a1035', '#4A1FE8'],
+  ['#ef4444', '#f59e0b'],
+];
 
-export default function EditorSidebar({ onAddText, onAddImageFile, onAddShape, onSetBackgroundColor, onSetBackgroundImageFile }) {
+export default function EditorSidebar({
+  onAddText,
+  onAddImageFile,
+  onAddShape,
+  onAddIcon,
+  onSetBackgroundColor,
+  onSetBackgroundGradient,
+  onSetBackgroundImageFile,
+}) {
   const [tab, setTab] = useState('Text');
+  const [iconCategory, setIconCategory] = useState(ICON_CATEGORIES[0].name);
   const uploadRef = useRef(null);
   const bgRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -15,6 +31,8 @@ export default function EditorSidebar({ onAddText, onAddImageFile, onAddShape, o
     const file = e.dataTransfer.files?.[0];
     if (file) onAddImageFile(file);
   };
+
+  const activeIconCategory = ICON_CATEGORIES.find((c) => c.name === iconCategory);
 
   return (
     <aside className="editor-sidebar">
@@ -62,7 +80,33 @@ export default function EditorSidebar({ onAddText, onAddImageFile, onAddShape, o
             <button onClick={() => onAddShape('roundedRect')}>▢ Rounded rect</button>
             <button onClick={() => onAddShape('circle')}>◯ Circle</button>
             <button onClick={() => onAddShape('triangle')}>△ Triangle</button>
+            <button onClick={() => onAddShape('hexagon')}>⬡ Polygon</button>
+            <button onClick={() => onAddShape('star')}>★ Star</button>
+            <button onClick={() => onAddShape('heart')}>♥ Heart</button>
+            <button onClick={() => onAddShape('arrow')}>➔ Arrow</button>
+            <button onClick={() => onAddShape('speechBubble')}>💬 Speech bubble</button>
             <button onClick={() => onAddShape('line')}>— Line</button>
+          </div>
+        )}
+
+        {tab === 'Icons' && (
+          <div>
+            <select value={iconCategory} onChange={(e) => setIconCategory(e.target.value)} className="editor-icon-category-select">
+              {ICON_CATEGORIES.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <div className="editor-icon-grid">
+              {activeIconCategory.icons.map((icon) => (
+                <button
+                  key={icon.id}
+                  title={icon.label}
+                  onClick={() => onAddIcon(icon.svg)}
+                  dangerouslySetInnerHTML={{ __html: icon.svg }}
+                />
+              ))}
+            </div>
+            <p className="editor-sidebar-hint">Starter set — click an icon to add it, then recolor from its toolbar.</p>
           </div>
         )}
 
@@ -75,6 +119,19 @@ export default function EditorSidebar({ onAddText, onAddImageFile, onAddShape, o
               ))}
               <input type="color" onChange={(e) => onSetBackgroundColor(e.target.value)} title="Custom color" />
             </div>
+
+            <p className="editor-sidebar-hint" style={{ marginTop: 16 }}>Gradient</p>
+            <div className="editor-swatches">
+              {GRADIENTS.map((g, i) => (
+                <button
+                  key={i}
+                  className="editor-swatch"
+                  style={{ background: `linear-gradient(135deg, ${g[0]}, ${g[1]})` }}
+                  onClick={() => onSetBackgroundGradient(g)}
+                />
+              ))}
+            </div>
+
             <p className="editor-sidebar-hint" style={{ marginTop: 16 }}>Upload background image</p>
             <button className="editor-sidebar-item" onClick={() => bgRef.current?.click()}>Upload image</button>
             <input
@@ -85,6 +142,20 @@ export default function EditorSidebar({ onAddText, onAddImageFile, onAddShape, o
               onChange={(e) => e.target.files?.[0] && onSetBackgroundImageFile(e.target.files[0])}
             />
           </div>
+        )}
+
+        {tab === 'Templates' && (
+          <p className="editor-sidebar-hint">
+            Template gallery is coming soon — for now, use the AI Generator to produce a new starting design,
+            or start from the current card and customize it here.
+          </p>
+        )}
+
+        {tab === 'Stickers' && (
+          <p className="editor-sidebar-hint">
+            A dedicated sticker pack is coming soon — the Icons tab already works as decorative stickers
+            in the meantime (add one, then resize/rotate/recolor it freely).
+          </p>
         )}
       </div>
     </aside>

@@ -200,3 +200,84 @@
 .editor-btn { border: 1px solid var(--card-border); }
 
 .editor-footnote { color: var(--muted); font-size: 13px; margin-top: 14px; }
+
+/* ── Phase 2-4 additions ─────────────────────────────────────── */
+
+.editor-right-column { display: flex; flex-direction: column; gap: 16px; }
+
+.editor-save-error { color: #ef4444; font-size: 12px; margin-top: 8px; }
+
+.editor-icon-category-select {
+  width: 100%; margin-bottom: 10px; background: var(--bg3); border: 1px solid var(--card-border);
+  color: var(--text); border-radius: 6px; padding: 6px;
+}
+.editor-icon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.editor-icon-grid button {
+  background: var(--bg3); border: 1px solid var(--card-border); border-radius: 8px;
+  padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.editor-icon-grid button svg { width: 32px; height: 32px; }
+
+.editor-layers {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+.editor-layers h4 { margin: 0 0 8px; font-size: 14px; }
+.editor-layers ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.editor-layers li {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border-radius: 6px; padding: 6px 8px;
+  font-size: 12px; cursor: pointer; border: 1px solid transparent;
+}
+.editor-layers li.active { border-color: var(--purple); }
+.editor-layer-drag { color: var(--muted); cursor: grab; }
+.editor-layer-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-layers li input {
+  flex: 1; background: var(--card-bg); border: 1px solid var(--card-border);
+  color: var(--text); border-radius: 4px; padding: 2px 4px; font-size: 12px;
+}
+.editor-layer-actions { display: flex; gap: 2px; }
+.editor-layer-actions button { background: transparent; border: none; cursor: pointer; font-size: 12px; padding: 2px 4px; }
+.editor-layer-actions button:hover { background: var(--purple-glow); border-radius: 4px; }
+
+.editor-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 170px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+}
+.editor-context-menu button {
+  background: transparent; border: none; color: var(--text); text-align: left;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.editor-context-menu button:hover:not(:disabled) { background: var(--purple-glow); }
+.editor-context-menu button:disabled { opacity: 0.4; cursor: not-allowed; }
+.editor-context-menu-divider { height: 1px; background: var(--card-border); margin: 4px 2px; }
+
+.editor-canvas-scroll {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-rows: 24px 1fr;
+}
+.editor-ruler { position: relative; background: var(--bg3); overflow: hidden; }
+.editor-ruler-h { grid-column: 2; grid-row: 1; }
+.editor-ruler-v { grid-column: 1; grid-row: 2; }
+.editor-ruler span { position: absolute; font-size: 9px; color: var(--muted); }
+.editor-ruler-h span { top: 4px; transform: translateX(-50%); }
+.editor-ruler-v span { left: 2px; transform: translateY(-50%); writing-mode: vertical-rl; }
+.editor-canvas-scroll .editor-canvas-wrap { grid-column: 2; grid-row: 2; }
+
+.editor-canvas-wrap.grid-on {
+  background-image:
+    linear-gradient(to right, rgba(108,59,255,0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(108,59,255,0.18) 1px, transparent 1px);
+  background-position: 16px 16px;
+}

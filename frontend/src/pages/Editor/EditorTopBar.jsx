@@ -1,10 +1,14 @@
 import React from 'react';
 
-export default function EditorTopBar({ zoom, onZoomIn, onZoomOut, onFit, onActualSize, onUndo, onRedo, saveState, lastSavedAt, isDirty, onSave }) {
+export default function EditorTopBar({
+  zoom, onZoomIn, onZoomOut, onFit, onActualSize, onUndo, onRedo,
+  saveState, saveError, lastSavedAt, isDirty,
+  gridEnabled, onToggleGrid, snapToGrid, onToggleSnapToGrid, snapToObjects, onToggleSnapToObjects,
+}) {
   const savedLabel = () => {
     if (saveState === 'saving') return 'Saving…';
     if (saveState === 'saved') return 'Saved';
-    if (saveState === 'error') return 'Save failed';
+    if (saveState === 'error') return saveError ? `Save failed: ${saveError}` : 'Save failed';
     if (lastSavedAt) return `Last saved ${lastSavedAt.toLocaleTimeString()}`;
     return isDirty ? 'Unsaved changes' : 'No changes yet';
   };
@@ -24,7 +28,13 @@ export default function EditorTopBar({ zoom, onZoomIn, onZoomOut, onFit, onActua
         <button onClick={onActualSize} title="Actual size">100%</button>
       </div>
 
-      <div className="editor-topbar-status">
+      <div className="editor-toolbar-group">
+        <button className={gridEnabled ? 'active' : ''} onClick={onToggleGrid} title="Toggle grid">▦ Grid</button>
+        <button className={snapToGrid ? 'active' : ''} onClick={onToggleSnapToGrid} title="Snap to grid">⌗ Snap grid</button>
+        <button className={snapToObjects ? 'active' : ''} onClick={onToggleSnapToObjects} title="Snap to objects">⌖ Snap obj</button>
+      </div>
+
+      <div className="editor-topbar-status" title={saveState === 'error' ? saveError : undefined}>
         <span className={`editor-save-dot ${saveState}`} />
         <span>{savedLabel()}</span>
       </div>

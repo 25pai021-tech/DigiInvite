@@ -361,7 +361,7 @@ def generate_card(body: GenerateCardIn):
         resp = requests.get(pollinations_url, timeout=120)
         resp.raise_for_status()
         image = Image.open(io.BytesIO(resp.content))
-        image = draw_details_on_card(image, row)
+        # image = draw_details_on_card(image, row)  # keep this commented 
     except Exception as e:
         raise HTTPException(502, f"Image generation failed: {e}")
 

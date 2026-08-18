@@ -14,7 +14,7 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
-
+import Contact from './pages/Contact';
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
   return (

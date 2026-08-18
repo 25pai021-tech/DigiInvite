@@ -9,6 +9,7 @@ import Register  from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreateInvitation from './pages/CreateInvitation/CreateInvitation';
 import MyRequests from './pages/MyRequests';
+import TemplatesPage from './pages/TemplatesPage/TemplatesPage';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -53,7 +54,7 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/my-requests" element={<MyRequests />} />
               <Route path="/create-invitation" element={<CreateInvitation />} />
-              <Route path="/templates" element={<ComingSoon title="Template Gallery" />} />
+              <Route path="/templates" element={<TemplatesPage />} />
               <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
               <Route path="/editor" element={<ComingSoon title="Invitation Editor" />} />
               <Route path="/editor/:requestId" element={<Editor />} />

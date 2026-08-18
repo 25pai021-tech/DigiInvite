@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { startFromTemplate } from '../../lib/startFromTemplate';
 import { useNavigate } from 'react-router-dom';
 import './TemplatesPage.css';
 
@@ -70,8 +71,20 @@ export default function TemplatesPage() {
     return Array.from(groups.values()).sort((a, b) => a.order - b.order);
   }, [templates]);
 
-  const handleCustomize = (tpl) => {
-    navigate('/create-invitation', { state: { templateId: tpl.id, template: tpl } });
+  
+  const [starting, setStarting] = useState(false);
+
+  const handleCustomize = async (tpl) => {
+    if (starting) return;
+    setStarting(true);
+    try {
+      const request = await startFromTemplate(tpl);
+      navigate(`/editor/${request.id}`);
+    } catch (e) {
+      alert(e.message || 'Could not start this template. Please try again.');
+    } finally {
+      setStarting(false);
+    }
   };
 
   return (

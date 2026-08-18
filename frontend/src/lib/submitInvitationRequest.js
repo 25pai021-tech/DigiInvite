@@ -21,7 +21,7 @@ async function uploadFile(file, userId, folder) {
  *
  * payload: { eventType, details, design }
  */
-export async function submitInvitationRequest({ eventType, details, design }) {
+export async function submitInvitationRequest({ eventType, details, design, template }) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -44,6 +44,8 @@ export async function submitInvitationRequest({ eventType, details, design }) {
       {
         user_id: user.id,
         event_type: eventType,
+        template_id: template?.id || null,
+        generated_image_url: template?.config?.full_image_url || null,
         event_name: details.eventName,
         host_name: details.hostName,
         bride_name: details.brideName || null,

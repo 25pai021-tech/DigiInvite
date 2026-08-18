@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import StepIndicator, { STEPS } from '../../components/StepIndicator/StepIndicator';
 import EventType from '../../components/EventType/EventType';
@@ -39,12 +40,15 @@ const EMPTY_DESIGN = {
 
 export default function CreateInvitation() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const pickedTemplate = location.state?.template || null;
 
   const [step, setStep] = useState(0);
-  const [eventType, setEventType] = useState('');
+  const [eventType, setEventType] = useState(pickedTemplate?.event_type || '');
+
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [detailErrors, setDetailErrors] = useState({});
-  const [design, setDesign] = useState(EMPTY_DESIGN);
+  const [design, setDesign] = useState({EMPTY_DESIGN, theme: pickedTemplate?.theme || '', });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [requestId, setRequestId] = useState(null);
@@ -98,7 +102,7 @@ export default function CreateInvitation() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const result = await submitInvitationRequest({ eventType, details, design });
+      const result = await submitInvitationRequest({ eventType, details, design, template });
       setRequestId(result.id);
       setStep(4);
     } catch (err) {
@@ -121,6 +125,14 @@ export default function CreateInvitation() {
         </header>
 
         <StepIndicator currentStep={step} />
+        {pickedTemplate && (
+          <div style={{
+            background: 'var(--card, #fff)', border: '1px solid var(--border, #eee)',
+            borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 14,
+          }}>
+            Customizing: <strong>{pickedTemplate.name}</strong>
+          </div>
+        )}
 
         <Card>
           {step === 0 && <EventType value={eventType} onChange={handleEventTypeSelect} />}

@@ -1,22 +1,29 @@
-name,event_type,theme,religion,region,language,tier,filename
-Baby Shower Invite,Baby Shower,Floral Pastel,General,Indian,English,basic,babyshower.png
-Home Ceremony Invite,Griha Pravesh,Traditional Motifs,Hindu,North Indian,Hindi,basic,home ceremony.png
-Hindu Wedding Invite 1,Wedding,Traditional Red & Gold,Hindu,North Indian,Hindi,Premium,1st_marrige.png
-Hindu Wedding Invite 2,Wedding,Traditional Red & Gold,Hindu,North Indian,Hindi,Premium,2nd_marrige.png
-Hindu Wedding Invite 3,Wedding,Traditional Red & Gold,Hindu,North Indian,Hindi,Premium,3rd_marrige.png
-Hindu Wedding Invite 4,Wedding,Traditional Red & Gold,Hindu,North Indian,Hindi,Premium,4th_marrige.png
-Engagement Invite,Engagement,Elegant Floral,Hindu,North Indian,English,basic,Eng.png
-Mehndi Ceremony Invite,Mehndi,Green & Gold Floral,Hindu,North Indian,Hindi,basic,mhendi.png
-Wedding Card Classic,Wedding,Royal Traditional,Hindu,North Indian,Hindi,Premium,wedding.png
-Mehndi Ceremony Invite,Mehndi,Green Floral,Islam,North Indian,Urdu,basic,mhendi2.png
-Muslim Wedding Card,Wedding (Nikah),Elegant Islamic Motifs,Islam,North Indian,Urdu,Premium,muslim_weddingCard.png
-South Indian Tradition Invite 1,Wedding,Traditional South Motifs,Hindu,South Indian,Tamil,basic,south_tradition_1.png
-South Indian Tradition Invite 2,Wedding,Traditional South Motifs,Hindu,South Indian,Tamil,basic,south_tradition_2.png
-South Indian Tradition Invite 3,Wedding,Traditional South Motifs,Hindu,South Indian,Telugu,basic,south_tradition_3.png
-South Indian Tradition Invite 4,Wedding,Traditional South Motifs,Hindu,South Indian,Telugu,basic,south_tradition_4.png
-Reception Invite,Reception,Elegant Traditional,Hindu,South Indian,Tamil,Premium,reception_1.png
-South Indian Wedding Invite,Wedding,Traditional Temple Motifs,Hindu,South Indian,Tamil,Premium,south_marrige1.png
-Elegant Ribbon Birthday,birthday,floral,,,English,premium,bday.png
-Royal Celestial Baby Birthday,birthday,royal,,,English,premium,bday3.png
-Little Pilot Bear Birthday,birthday,modern,,,English,premium,bday2.png
-Boho Deer First Birthday,birthday,traditional,,,English,premium,bday1.png
+name,event_type,theme,colors,style_keywords,motifs,layout,mood,religion,region,language,tier,filename
+Colorful Balloon Birthday Bash,birthday,modern,pink and blue and yellow,playful cartoon vibrant festive,balloons confetti stars,center,joyful playful,,,English,basic,bday.png
+Golden Balloon Elegant Birthday,birthday,luxury,gold and black,elegant glittery festive bold,balloons confetti sparkles,center,festive glamorous,,,English,premium,bday1.png
+Pastel Floral Birthday Card,birthday,floral,pink and peach and green,watercolor soft floral delicate,flowers leaves balloons,center,sweet cheerful,,,English,basic,bday2.png
+Fun Cartoon Kids Birthday,birthday,modern,blue and yellow and red,cartoon playful bright bold,cake balloons confetti,bottom,playful fun,,,English,basic,bday3.png
+Traditional Hindu Wedding Invitation One,wedding,traditional,red and gold,ornate traditional elegant floral,mandala peacock floral border,center,auspicious traditional,hindu,indian,English,premium,1st_marrige.png
+Traditional Hindu Wedding Invitation Two,wedding,traditional,maroon and gold,ornate traditional elegant floral,paisley floral border ganesh motif,center,auspicious traditional,hindu,indian,English,premium,2nd_marrige.png
+Royal Hindu Wedding Invitation,wedding,royal,royal blue and gold,regal ornate majestic detailed,crown floral border mandala,center,regal auspicious,hindu,indian,English,premium,3rd_marrige.png
+Blush Gold Hindu Wedding Invitation,wedding,traditional,pink and gold,ornate delicate elegant floral,floral border paisley diya,center,warm auspicious,hindu,indian,English,premium,4th_marrige.png
+Traditional Hindu Engagement Card,engagement,traditional,gold and cream,ornate elegant delicate classic,rings floral border,center,joyful auspicious,hindu,indian,English,premium,Eng.png
+Hindu Mehndi Ceremony Invitation,wedding,traditional,green and gold,festive ornate colorful hand-painted,henna hand mandala floral,center,festive joyful,hindu,indian,English,basic,mhendi.png
+Classic Hindu Wedding Card,wedding,traditional,red and gold,ornate traditional elegant regal,mandap floral border kalash,center,auspicious traditional,hindu,indian,English,premium,wedding.png
+Corporate Annual Event Invitation,corporate,modern,navy and gold,sleek geometric formal professional,geometric shapes abstract lines,center,professional formal,,,English,premium,annual_event.png
+Pastel Baby Shower Invitation,baby-shower,minimal,pastel blue and pink and white,soft gentle clean minimal,clouds stars baby items,center,sweet gentle,,,English,basic,babyshower.png
+Navy Gold Graduation Card,graduation,modern,navy and gold,clean formal bold modern,graduation cap diploma stars,center,proud celebratory,,,English,basic,graduaitionDay.png
+Black Gold Graduation Invitation,graduation,modern,black and gold,sleek formal bold elegant,graduation cap diploma ribbon,center,proud accomplished,,,English,basic,graduaitionDay1.png
+Maroon Gold Graduation Invitation,graduation,modern,maroon and gold,formal classic bold clean,graduation cap scroll stars,center,proud celebratory,,,English,basic,graduaitionDay2.png
+Traditional Housewarming Invitation,housewarming,traditional,orange and gold,warm ornate festive traditional,diya rangoli floral border,center,warm welcoming,hindu,indian,English,basic,home-ceremony.png
+Iftar Party Invitation,custom,traditional,green and gold,festive ornate warm elegant,crescent moon lantern star,center,warm festive,islam,,English,basic,iftar_party.png
+Grand Opening Corporate Invitation,corporate,luxury,gold and black,elegant bold festive formal,ribbon abstract shapes,center,celebratory formal,,,English,premium,opening.png
+Red Gold Grand Opening Card,corporate,luxury,red and gold,bold festive elegant formal,ribbon confetti abstract shapes,center,celebratory formal,,,English,premium,openning1.png
+Islamic Mehndi Ceremony Card,wedding,traditional,green and gold,festive ornate colorful hand-painted,henna floral crescent moon,center,festive joyful,islam,,English,basic,mhendi2.png
+Muslim Wedding Invitation Card,wedding,traditional,green and gold,elegant ornate classic formal,crescent moon floral arch,center,elegant auspicious,islam,,English,premium,muslim_weddingCard.png
+South Indian Traditional Wedding One,wedding,traditional,red and gold,ornate temple-style regal detailed,temple border kalash floral,center,auspicious traditional,hindu,south indian,English,premium,south_tradition_1.png
+South Indian Traditional Wedding Two,wedding,traditional,maroon and gold,ornate temple-style regal detailed,temple border peacock floral,center,auspicious traditional,hindu,south indian,English,premium,south_tradition_2.png
+South Indian Traditional Wedding Three,wedding,traditional,green and gold,ornate temple-style regal detailed,temple border floral kalash,center,auspicious traditional,hindu,south indian,English,premium,south_tradition_3.png
+South Indian Traditional Wedding Four,wedding,traditional,yellow and gold,ornate temple-style regal detailed,temple border floral peacock,center,auspicious traditional,hindu,south indian,English,premium,south_tradition_4.png
+Elegant Wedding Reception Invitation,wedding,modern,blush pink and gold,romantic elegant soft modern,floral arch string lights,center,romantic elegant,,,English,premium,reception_1.png
+South Indian Marriage Invitation,wedding,traditional,red and gold,ornate temple-style regal detailed,temple border peacock floral,center,auspicious traditional,hindu,south indian,English,premium,south_marrige1.png

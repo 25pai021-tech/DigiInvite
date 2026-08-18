@@ -314,10 +314,19 @@ def build_prompt(r, template=None):
     if r.get("color"):
         parts.append(f"in a {r['color']} colour palette")
     if template:
+        if template.get("colors"):
+            parts.append(f"colour palette of {template['colors']}")
+        if template.get("style_keywords"):
+            parts.append(str(template["style_keywords"]))
+        if template.get("motifs"):
+            parts.append(f"featuring {template['motifs']}")
+        if template.get("mood"):
+            parts.append(f"{template['mood']} mood")
         if template.get("religion"):
             parts.append(f"{template['religion']} cultural motifs")
         if template.get("region"):
             parts.append(f"{template['region']} regional aesthetic")
+    
     if r.get("instructions"):
         parts.append(str(r["instructions"]))
 

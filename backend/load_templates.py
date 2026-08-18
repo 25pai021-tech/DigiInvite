@@ -41,8 +41,13 @@ for row in rows:
     # --- database row ---
     record = {
         "name": row["name"].strip(),
-        "event_type": row["event_type"].strip(),
-        "theme": row["theme"].strip(),
+        "event_type": row["event_type"].strip().lower(),
+        "theme": row["theme"].strip().lower(),
+        "colors": row.get("colors", "").strip() or None,
+        "style_keywords": row.get("style_keywords", "").strip() or None,
+        "motifs": row.get("motifs", "").strip() or None,
+        "layout": row.get("layout", "").strip() or None,
+        "mood": row.get("mood", "").strip() or None,
         "religion": row.get("religion", "").strip() or None,
         "region": row.get("region", "").strip() or None,
         "language": row.get("language", "").strip() or "English",

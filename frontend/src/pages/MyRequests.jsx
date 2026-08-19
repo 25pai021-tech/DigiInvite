@@ -13,16 +13,15 @@ const STATUS_COLORS = {
   'Completed': '#16a34a',
 };
 
+const VIEWABLE = ['Preview Ready', 'Approved', 'Paid', 'Completed'];
+
 export default function MyRequests() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
-  const [viewingCard, setViewingCard] = useState(null);   // image URL shown in the popup
-
-  // the user can see the card once the admin has moved it to Preview Ready or beyond
-  const VIEWABLE = ['Preview Ready', 'Approved', 'Paid', 'Completed'];
+  const [viewingCard, setViewingCard] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -42,6 +41,23 @@ export default function MyRequests() {
     }
     load();
   }, [user]);
+
+  async function handleDelete(requestId) {
+    const confirmed = window.confirm('Delete this request? This cannot be undone.');
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from('invitation_requests')
+      .delete()
+      .eq('id', requestId);
+
+    if (error) {
+      alert('Could not delete this request. Please try again.');
+      return;
+    }
+
+    setRequests((prev) => prev.filter((r) => r.id !== requestId));
+  }
 
   if (loading || busy) {
     return (
@@ -84,6 +100,7 @@ export default function MyRequests() {
                 {r.status}
               </span>
             </div>
+
             {VIEWABLE.includes(r.status) && r.generated_image_url && (
               <button
                 onClick={() => navigate(`/editor/${r.id}`)}
@@ -97,12 +114,26 @@ export default function MyRequests() {
                 Your card is being prepared.
               </p>
             )}
+
+            <button
+              onClick={() => handleDelete(r.id)}
+              style={{
+                ...btnStyle,
+                marginTop: 12,
+                marginLeft: 10,
+                background: '#e05555',
+              }}
+            >
+              Delete
+            </button>
+
             <div style={{ fontSize: 12, color: 'var(--muted, #aaa)', marginTop: 10 }}>
               Requested on {new Date(r.created_at).toLocaleDateString()}
             </div>
           </div>
         ))}
       </div>
+
       {viewingCard && (
         <div
           onClick={() => setViewingCard(null)}
@@ -124,7 +155,6 @@ export default function MyRequests() {
         </div>
       )}
     </div>
-    
   );
 }
 

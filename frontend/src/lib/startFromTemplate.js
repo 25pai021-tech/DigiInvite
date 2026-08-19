@@ -1,11 +1,10 @@
 import { supabase } from './supabaseClient';
 
-/**
- * Creates a bare invitation request straight from a chosen template,
- * with no form. Fills every required field with a safe placeholder
- * the user can immediately overwrite inside the editor.
- * Returns the new request's id so the caller can navigate to the editor.
- */
+function sampleFor(template, field, fallback) {
+  const item = template.text_layout?.find((i) => i.field === field);
+  return item?.sample || fallback;
+}
+
 export async function startFromTemplate(template) {
   const {
     data: { user },
@@ -23,11 +22,11 @@ export async function startFromTemplate(template) {
         template_id: template.id,
         event_type: template.event_type,
         theme: template.theme || null,
-        event_name: template.name || 'My Celebration',
-        host_name: user.user_metadata?.full_name || 'Your Name',
+        event_name: sampleFor(template, 'event_name', template.name || 'My Celebration'),
+        host_name: sampleFor(template, 'host_name', 'Your Name'),
+        venue: sampleFor(template, 'venue', 'Your Venue'),
         date: new Date().toISOString().slice(0, 10),
         time: '18:00',
-        venue: 'Your Venue',
         phone: 'Not provided',
         email: user.email || 'Not provided',
         generated_image_url: template.config?.full_image_url || null,

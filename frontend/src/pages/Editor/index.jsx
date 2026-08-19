@@ -36,7 +36,7 @@ export default function Editor() {
     async function load() {
       const { data, error } = await supabase
         .from('invitation_requests')
-        .select('*')
+        .select('*, templates(text_layout)')
         .eq('id', requestId)
         .single();
       if (error || !data) setError('Could not load this card.');

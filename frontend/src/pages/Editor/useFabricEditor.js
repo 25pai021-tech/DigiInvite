@@ -79,6 +79,37 @@ function buildDefaultObjects(request) {
   return objects;
 }
 
+/**
+ * Builds editable text objects from a template's saved text_layout —
+ * using each field's real value from the request, falling back to the
+ * template's sample text if that field is empty.
+ */
+function buildObjectsFromLayout(layout, request) {
+  return layout.map((item) => {
+    let text = request[item.field] || item.sample;
+
+    if (item.field === 'date') {
+      const dateLine = [request.date, request.time].filter(Boolean).join('  •  ');
+      text = dateLine || item.sample;
+    }
+
+    const Ctor = item.field === 'venue' || item.field === 'special_message' ? fabric.Textbox : fabric.IText;
+
+    return new Ctor(text, {
+      left: (item.x / 100) * CANVAS_W,
+      top: (item.y / 100) * CANVAS_H,
+      originX: 'center',
+      originY: 'center',
+      width: Ctor === fabric.Textbox ? CANVAS_W * 0.8 : undefined,
+      fontFamily: item.font || 'Inter',
+      fontSize: item.size || 20,
+      fill: item.color || '#1a1a1a',
+      textAlign: item.align || 'center',
+      name: item.id,
+    });
+  });
+}
+
 function starPoints(spikes, outerRadius, innerRadius) {
   const points = [];
   const step = Math.PI / spikes;
@@ -154,7 +185,11 @@ export function useFabricEditor({ request, onSaved }) {
     };
 
     const loadDefaultObjects = () => {
-      buildDefaultObjects(request).forEach((obj) => canvas.add(obj));
+      const layout = request.templates?.text_layout;
+      const objects = (layout && layout.length)
+        ? buildObjectsFromLayout(layout, request)
+        : buildDefaultObjects(request);
+      objects.forEach((obj) => canvas.add(obj));
       finishLoad();
     };
 

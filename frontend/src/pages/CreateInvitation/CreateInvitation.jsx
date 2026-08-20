@@ -102,7 +102,7 @@ export default function CreateInvitation() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const result = await submitInvitationRequest({ eventType, details, design, template });
+      const result = await submitInvitationRequest({ eventType, details, design, template: pickedTemplate });
       setRequestId(result.id);
       setStep(4);
     } catch (err) {

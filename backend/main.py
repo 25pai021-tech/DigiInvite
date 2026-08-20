@@ -220,8 +220,7 @@ class StatusUpdateIn(BaseModel):
 
 @app.post("/admin/updateStatus")
 def admin_update_status(body: StatusUpdateIn):
-    allowed = ["Pending", "Designing", "Preview Ready",
-               "Revision Requested", "Approved", "Paid", "Completed"]
+    allowed = ["Pending", "Draft", "Paid", "Completed"]
     if body.status not in allowed:
         raise HTTPException(400, "Invalid status")
 

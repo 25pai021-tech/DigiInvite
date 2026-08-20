@@ -30,7 +30,7 @@ export async function startFromTemplate(template) {
         phone: 'Not provided',
         email: user.email || 'Not provided',
         generated_image_url: template.config?.full_image_url || null,
-        status: 'Preview Ready',
+        status: 'Draft',
       },
     ])
     .select()

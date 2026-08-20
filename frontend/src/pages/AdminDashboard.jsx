@@ -236,11 +236,7 @@ function Support() {
   );
 }
 
-// ---------- Main layout ----------
-const STATUS_OPTIONS = [
-  'Pending', 'Designing', 'Preview Ready',
-  'Revision Requested', 'Approved', 'Paid', 'Completed',
-];
+
 
 const API_URL = 'http://localhost:8000';
 
@@ -250,9 +246,6 @@ function Requests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);   // the request being viewed in detail
-  const [generating, setGenerating] = useState(false);
-  const [genError, setGenError] = useState('');
-  
 
   useEffect(() => {
     fetch(`${API_URL}/admin/requests`)
@@ -267,55 +260,10 @@ function Requests() {
       });
   }, []);
 
-  async function changeStatus(requestId, newStatus) {
-    try {
-      const res = await fetch(`${API_URL}/admin/updateStatus`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id: requestId, status: newStatus }),
-      });
-      if (!res.ok) throw new Error();
-      setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r))
-      );
-      // keep the open detail view in sync too
-      setSelected((prev) => (prev && prev.id === requestId ? { ...prev, status: newStatus } : prev));
-    } catch {
-      alert('Could not update status. Please try again.');
-    }
-  }
-
-  async function generateCard(requestId) {
-    setGenerating(true);
-    setGenError('');
-    try {
-      const res = await fetch(`${API_URL}/generateCard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id: requestId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Generation failed');
-
-      // put the new image on both the list and the open detail view
-      setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, generated_image_url: data.image_url } : r))
-      );
-      setSelected((prev) =>
-        prev && prev.id === requestId ? { ...prev, generated_image_url: data.image_url } : prev
-      );
-    } catch (e) {
-      setGenError(String(e.message || e));
-    } finally {
-      setGenerating(false);
-    }
-  }
-
   // ===== DETAIL VIEW (shown when a request is selected) =====
   if (selected) {
     const r = selected;
 
-    // helper to show one labelled field (skips empty ones)
     const Field = ({ label, value }) =>
       value ? (
         <div className="detail-field">
@@ -324,7 +272,6 @@ function Requests() {
         </div>
       ) : null;
 
-    // reference images may be stored as an array
     const refImages = Array.isArray(r.reference_image_urls) ? r.reference_image_urls : [];
 
     return (
@@ -332,7 +279,7 @@ function Requests() {
         <div className="admin-section-heading">
           <button className="link-btn" onClick={() => setSelected(null)}>← Back to list</button>
           <h2 style={{ marginTop: 10 }}>{r.event_name || 'Request details'}</h2>
-          <p>Review everything the user submitted before generating or approving.</p>
+          <p>Read-only view — users generate and manage their own cards; status updates automatically.</p>
         </div>
 
         <div className="admin-card">
@@ -381,45 +328,20 @@ function Requests() {
           </div>
         )}
 
-
-        <div className="admin-card" style={{ marginTop: 16 }}>
-          <h3 style={{ marginTop: 0 }}>AI Card</h3>
-
-          <button
-            className="btn-admin-primary"
-            onClick={() => generateCard(r.id)}
-            disabled={generating}
-          >
-            {generating
-              ? 'Generating… (this can take up to a minute)'
-              : r.generated_image_url ? 'Regenerate Card' : 'Generate Card'}
-          </button>
-
-          {genError && (
-            <p style={{ color: '#e0555a', marginTop: 10 }}>{genError}</p>
-          )}
-
-          {r.generated_image_url && !generating && (
-            <div style={{ marginTop: 16 }}>
-              <img
-                src={r.generated_image_url}
-                alt="Generated card"
-                className="generated-preview"
-              />
-              <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                Happy with it? Set the status below to <strong>Preview Ready</strong> so the user can view it.
-              </p>
-            </div>
-          )}
-        </div>
+        {r.generated_image_url && (
+          <div className="admin-card" style={{ marginTop: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Card</h3>
+            <img
+              src={r.generated_image_url}
+              alt="Generated card"
+              className="generated-preview"
+            />
+          </div>
+        )}
 
         <div className="admin-card" style={{ marginTop: 16 }}>
           <h3 style={{ marginTop: 0 }}>Status</h3>
-          <select value={r.status} onChange={(e) => changeStatus(r.id, e.target.value)}>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <span className="status-badge">{r.status}</span>
         </div>
       </div>
     );
@@ -453,13 +375,7 @@ function Requests() {
                   <td className="muted">{r.host_name}</td>
                   <td className="muted">{r.date}</td>
                   <td className="muted">{new Date(r.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <select value={r.status} onChange={(e) => changeStatus(r.id, e.target.value)}>
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </td>
+                  <td><span className="status-badge">{r.status}</span></td>
                   <td className="row-actions">
                     <button className="link-btn" onClick={() => setSelected(r)}>View</button>
                   </td>
@@ -475,7 +391,6 @@ function Requests() {
     </div>
   );
 }
-
 
 export default function AdminDashboard() {
   const [active, setActive] = useState('overview');

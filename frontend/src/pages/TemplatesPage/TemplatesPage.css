@@ -150,10 +150,23 @@
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
   transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;   /* needed so the overlay text positions correctly inside it */
+  overflow: hidden;
 }
 .tpl-card:hover .tpl-image-wrap {
   transform: translateY(-6px) scale(1.02);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.tpl-overlay-text {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  pointer-events: none;   /* clicks pass through to the card, not the text */
+  line-height: 1.2;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tpl-image-wrap img {

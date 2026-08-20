@@ -206,6 +206,8 @@ function CategorySection({ category, expanded, onToggleExpand, onCustomize }) {
 
 function TemplateCard({ template, onCustomize }) {
   const thumb = getThumb(template);
+  const layout = template.text_layout;
+
   return (
     <div className="tpl-card">
       <div className="tpl-image-wrap">
@@ -214,6 +216,23 @@ function TemplateCard({ template, onCustomize }) {
         ) : (
           <div className="tpl-image-fallback" />
         )}
+
+        {Array.isArray(layout) && layout.map((item) => (
+          <span
+            key={item.id}
+            className="tpl-overlay-text"
+            style={{
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              fontFamily: item.font || 'Inter',
+              fontSize: `${(item.size || 20) * 0.42}px`,   // scaled down for the smaller thumbnail
+              color: item.color || '#1a1a1a',
+              textAlign: item.align || 'center',
+            }}
+          >
+            {item.sample}
+          </span>
+        ))}
       </div>
       <button className="tpl-customize-btn" onClick={() => onCustomize(template)}>
         Customize

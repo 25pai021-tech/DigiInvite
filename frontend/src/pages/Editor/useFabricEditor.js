@@ -12,16 +12,36 @@ const PREVIEW_BUCKET = 'design-uploads';
  * generated request (used the first time someone opens the editor, before
  * any editor_state has been saved).
  */
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (!y || !m || !d) return dateStr;
+  return `${d}-${m}-${y}`;
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${suffix}`;
+}
+
 function buildDefaultObjects(request) {
   const objects = [];
+  const centerY = CANVAS_H / 2;
 
   objects.push(
     new fabric.IText(request.event_name || 'Your Event', {
       left: CANVAS_W / 2,
-      top: 140,
+      top: centerY - 120,
       originX: 'center',
+      originY: 'center',
       fontFamily: 'Playfair Display',
-      fontSize: 44,
+      fontSize: 56,
       fontWeight: '700',
       fill: '#1a1a1a',
       textAlign: 'center',
@@ -29,15 +49,16 @@ function buildDefaultObjects(request) {
     })
   );
 
-  const dateLine = [request.date, request.time].filter(Boolean).join('  •  ');
+  const dateLine = [formatDate(request.date), formatTime(request.time)].filter(Boolean).join('  •  ');
   if (dateLine) {
     objects.push(
       new fabric.IText(dateLine, {
         left: CANVAS_W / 2,
-        top: 210,
+        top: centerY - 20,
         originX: 'center',
+        originY: 'center',
         fontFamily: 'Inter',
-        fontSize: 20,
+        fontSize: 28,
         fill: '#333333',
         textAlign: 'center',
         name: 'date',
@@ -49,10 +70,11 @@ function buildDefaultObjects(request) {
     objects.push(
       new fabric.IText(request.venue, {
         left: CANVAS_W / 2,
-        top: 250,
+        top: centerY + 50,
         originX: 'center',
+        originY: 'center',
         fontFamily: 'Inter',
-        fontSize: 18,
+        fontSize: 24,
         fill: '#555555',
         textAlign: 'center',
         name: 'venue',
@@ -64,11 +86,12 @@ function buildDefaultObjects(request) {
     objects.push(
       new fabric.Textbox(request.special_message, {
         left: CANVAS_W / 2,
-        top: 300,
+        top: centerY + 130,
         width: 560,
         originX: 'center',
+        originY: 'center',
         fontFamily: 'Inter',
-        fontSize: 16,
+        fontSize: 20,
         fill: '#6b6585',
         textAlign: 'center',
         name: 'message',

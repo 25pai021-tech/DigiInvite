@@ -3,17 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 
+const API_URL = 'http://localhost:8000';
+
 const STATUS_COLORS = {
   'Pending': '#9ca3af',
-  'Designing': '#3b82f6',
-  'Preview Ready': '#8b5cf6',
-  'Revision Requested': '#f59e0b',
-  'Approved': '#22c55e',
+  'Draft': '#8b5cf6',
   'Paid': '#14b8a6',
   'Completed': '#16a34a',
 };
 
-const VIEWABLE = ['Preview Ready', 'Approved', 'Paid', 'Completed'];
+const VIEWABLE = ['Draft', 'Paid', 'Completed'];
 
 export default function MyRequests() {
   const { user, loading } = useAuth();
@@ -21,7 +20,7 @@ export default function MyRequests() {
   const [requests, setRequests] = useState([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
-  const [viewingCard, setViewingCard] = useState(null);
+  const [generatingId, setGeneratingId] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -41,6 +40,36 @@ export default function MyRequests() {
     }
     load();
   }, [user]);
+
+  async function handleGenerate(requestId) {
+    setGeneratingId(requestId);
+    try {
+      const res = await fetch(`${API_URL}/generateCard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Could not generate your card.');
+
+      // mark it Draft immediately — no admin step involved
+      const { error } = await supabase
+        .from('invitation_requests')
+        .update({ status: 'Draft' })
+        .eq('id', requestId);
+      if (error) throw new Error('Card generated, but could not update its status.');
+
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId ? { ...r, generated_image_url: data.image_url, status: 'Draft' } : r
+        )
+      );
+    } catch (e) {
+      alert(e.message || 'Something went wrong generating your card.');
+    } finally {
+      setGeneratingId(null);
+    }
+  }
 
   async function handleDelete(requestId) {
     const confirmed = window.confirm('Delete this request? This cannot be undone.');
@@ -101,6 +130,16 @@ export default function MyRequests() {
               </span>
             </div>
 
+            {r.status === 'Pending' && (
+              <button
+                onClick={() => handleGenerate(r.id)}
+                disabled={generatingId === r.id}
+                style={{ ...btnStyle, marginTop: 12 }}
+              >
+                {generatingId === r.id ? 'Generating…' : 'Generate My Card'}
+              </button>
+            )}
+
             {VIEWABLE.includes(r.status) && r.generated_image_url && (
               <button
                 onClick={() => navigate(`/editor/${r.id}`)}
@@ -133,27 +172,6 @@ export default function MyRequests() {
           </div>
         ))}
       </div>
-
-      {viewingCard && (
-        <div
-          onClick={() => setViewingCard(null)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-            display: 'grid', placeItems: 'center', zIndex: 1000, padding: 20,
-          }}
-        >
-          <div onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <img
-              src={viewingCard}
-              alt="Your invitation card"
-              style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: 12 }}
-            />
-            <div style={{ marginTop: 16 }}>
-              <button onClick={() => setViewingCard(null)} style={btnStyle}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

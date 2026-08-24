@@ -107,7 +107,7 @@ function buildDefaultObjects(request) {
  * using each field's real value from the request, falling back to the
  * template's sample text if that field is empty.
  */
-function buildObjectsFromLayout(layout, request) {
+function buildObjectsFromLayout(layout, request, bgHeight = CANVAS_H) {
   return layout.map((item) => {
     let text = request[item.field] || item.sample;
 
@@ -117,15 +117,16 @@ function buildObjectsFromLayout(layout, request) {
     }
 
     const Ctor = item.field === 'venue' || item.field === 'special_message' ? fabric.Textbox : fabric.IText;
+    const heightScale = bgHeight / CANVAS_H;
 
     return new Ctor(text, {
       left: (item.x / 100) * CANVAS_W,
-      top: (item.y / 100) * CANVAS_H,
+      top: (item.y / 100) * bgHeight,
       originX: 'center',
       originY: 'center',
       width: Ctor === fabric.Textbox ? CANVAS_W * 0.8 : undefined,
       fontFamily: item.font || 'Inter',
-      fontSize: item.size || 20,
+      fontSize: (item.size || 20) * heightScale,
       fill: item.color || '#1a1a1a',
       textAlign: item.align || 'center',
       name: item.id,
@@ -182,6 +183,7 @@ export function useFabricEditor({ request, onSaved }) {
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [snapToObjects, setSnapToObjects] = useState(true);
   const guideLinesRef = useRef([]);
+  const bgHeightRef = useRef(CANVAS_H);
   const snapToGridRef = useRef(snapToGrid);
   const snapToObjectsRef = useRef(snapToObjects);
   useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
@@ -207,16 +209,16 @@ export function useFabricEditor({ request, onSaved }) {
       refreshLayersRef.current();
     };
 
-    const loadDefaultObjects = () => {
+    const loadDefaultObjects = (bgHeight = CANVAS_H) => {
       const layout = request.templates?.text_layout;
       const objects = (layout && layout.length)
-        ? buildObjectsFromLayout(layout, request)
+        ? buildObjectsFromLayout(layout, request, bgHeight)
         : buildDefaultObjects(request);
       objects.forEach((obj) => canvas.add(obj));
       finishLoad();
     };
 
-    const setupWithBackground = () => {
+        const setupWithBackground = () => {
       if (request.generated_image_url) {
         fabric.Image.fromURL(
           request.generated_image_url,
@@ -225,10 +227,14 @@ export function useFabricEditor({ request, onSaved }) {
             img.set({ left: 0, top: 0, selectable: false, evented: false, name: '__background' });
             canvas.add(img);
             canvas.sendToBack(img);
+            const realBgHeight = img.getScaledHeight();
+            canvas.setHeight(realBgHeight);
+            canvas.setWidth(CANVAS_W);
+            bgHeightRef.current = realBgHeight;
             if (request.editor_state) {
               // background already included in saved state; skip re-adding
             } else {
-              loadDefaultObjects();
+              loadDefaultObjects(realBgHeight);
               return;
             }
             finishLoad();
@@ -400,9 +406,10 @@ export function useFabricEditor({ request, onSaved }) {
     const clamped = Math.min(2, Math.max(0.1, value));
     canvas.setZoom(clamped);
     canvas.setWidth(CANVAS_W * clamped);
-    canvas.setHeight(CANVAS_H * clamped);
+    canvas.setHeight(bgHeightRef.current * clamped);
     setZoomState(clamped);
   }, []);
+  
   const zoomIn = useCallback(() => setZoom(zoom + 0.1), [zoom, setZoom]);
   const zoomOut = useCallback(() => setZoom(zoom - 0.1), [zoom, setZoom]);
   const fitToScreen = useCallback((containerWidth) => {

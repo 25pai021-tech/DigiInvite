@@ -222,3 +222,22 @@ img { max-width: 100%; display: block; }
 @media (min-width: 769px) {
   .hide-desktop { display: none !important; }
 }
+
+/* ─── LUXURY ACCENTS & 3D UTILITIES ─── */
+.gold-shimmer {
+  background: linear-gradient(135deg, #fce08b 0%, #d4af37 50%, #aa8010 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.perspective-container {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.subtle-glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+}

@@ -1,88 +1,150 @@
-.cta-section {
-  padding: 96px 48px;
+/* ─── Final CTA Section Styles ─── */
+.cta-final-section {
+  padding: 100px 24px 120px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-glow-backdrop {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(108, 59, 255, 0.18) 0%, rgba(212, 175, 55, 0.1) 40%, transparent 70%);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.cta-luxury-card {
+  position: relative;
+  background: linear-gradient(150deg, #1C1236 0%, #2A1752 50%, #150B28 100%);
+  border-radius: 28px;
+  padding: 64px 40px;
   text-align: center;
-  border-top: 1px solid var(--divider);
-  transition: background 0.3s;
+  color: #FFFFFF;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  max-width: 920px;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
-[data-theme="light"] .cta-section {
-  background: linear-gradient(135deg, #f0ebff 0%, #fff8f0 100%);
-}
-[data-theme="dark"] .cta-section {
-  background: linear-gradient(135deg, rgba(108,59,255,0.08) 0%, var(--bg2) 50%, rgba(212,175,55,0.06) 100%);
+.cta-card-gold-border {
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 20px;
+  pointer-events: none;
 }
 
-.cta-inner { max-width: 640px; margin: 0 auto; }
+.cta-crest-ornament {
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+  display: block;
+  margin-bottom: 16px;
+}
 
-.cta-section h2 {
+.cta-heading {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
+  font-size: clamp(2.2rem, 3.8vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #FFFFFF;
   margin-bottom: 18px;
-  letter-spacing: -0.5px;
-  color: var(--text);
+  letter-spacing: -0.01em;
 }
 
-.cta-section p {
-  color: var(--muted);
-  font-size: 1rem;
-  margin-bottom: 36px;
-  line-height: 1.75;
+.cta-subheading {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 580px;
+  margin: 0 auto 36px;
+  line-height: 1.7;
 }
 
-.cta-btns {
+.cta-actions-group {
   display: flex;
-  gap: 12px;
+  align-items: center;
   justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-cta-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #F0CE5E 0%, #D4AF37 50%, #B8860B 100%);
+  color: #1A1005;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 15px 32px;
+  border-radius: 50px;
+  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.btn-cta-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(212, 175, 55, 0.55);
+}
+
+.btn-cta-gold:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+.btn-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.98rem;
+  font-weight: 600;
+  padding: 15px 28px;
+  border-radius: 50px;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.btn-cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.cta-trust-items {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.65);
   flex-wrap: wrap;
 }
 
-/* reuse hero button classes */
-.btn-cta-main {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, var(--purple-light), var(--purple-dark));
-  color: #fff;
-  border: none;
-  border-radius: 50px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  padding: 14px 28px;
-  cursor: pointer;
-  box-shadow: 0 6px 28px var(--purple-glow);
-  transition: transform 0.2s, box-shadow 0.2s;
-  text-decoration: none;
-}
-.btn-cta-main:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 36px var(--purple-glow);
-}
-
-.btn-cta-outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--card-bg);
-  color: var(--text);
-  border: 1.5px solid var(--card-border);
-  border-radius: 50px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  padding: 14px 22px;
-  cursor: pointer;
-  box-shadow: var(--card-shadow);
-  transition: transform 0.2s, border-color 0.2s, color 0.2s;
-  text-decoration: none;
-}
-.btn-cta-outline:hover {
-  transform: translateY(-3px);
-  border-color: var(--purple);
-  color: var(--purple);
-}
-
 @media (max-width: 768px) {
-  .cta-section { padding: 64px 20px; }
-  .cta-btns { flex-direction: column; align-items: center; }
-  .btn-cta-main, .btn-cta-outline { width: 100%; justify-content: center; }
+  .cta-luxury-card {
+    padding: 48px 24px;
+  }
+
+  .btn-cta-gold,
+  .btn-cta-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cta-trust-items {
+    flex-direction: column;
+    gap: 8px;
+  }
 }

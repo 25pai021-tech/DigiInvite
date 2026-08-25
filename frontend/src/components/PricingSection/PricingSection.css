@@ -1,0 +1,235 @@
+/* ─── Pricing Section Styles ─── */
+.pricing-section {
+  padding: 100px 24px;
+  background: var(--bg2);
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-header {
+  margin-bottom: 56px;
+}
+
+.pricing-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  align-items: stretch;
+  max-width: 1080px;
+  margin: 0 auto 48px;
+}
+
+.pricing-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: 22px;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--card-shadow);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pricing-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(108, 59, 255, 0.14);
+}
+
+.pricing-card.popular {
+  border-color: var(--purple);
+  background: linear-gradient(180deg, var(--card-bg) 0%, rgba(108, 59, 255, 0.04) 100%);
+  box-shadow: 0 16px 40px rgba(108, 59, 255, 0.18);
+  transform: scale(1.03);
+}
+
+.pricing-card.popular:hover {
+  transform: scale(1.03) translateY(-6px);
+}
+
+.pricing-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+.pricing-badge.popular-badge {
+  background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px var(--purple-glow);
+}
+
+.pricing-card-header {
+  margin-bottom: 20px;
+}
+
+.tier-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.tier-desc {
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  min-height: 40px;
+}
+
+.tier-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tier-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.tier-period {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.pricing-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--divider);
+  margin-bottom: 24px;
+}
+
+.tier-features-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex: 1;
+}
+
+.tier-features-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.86rem;
+  color: var(--text2);
+  line-height: 1.4;
+}
+
+.feature-check {
+  color: #10B981;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tier-cta-wrap {
+  margin-top: auto;
+}
+
+.btn-tier {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  border-radius: 50px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-tier.btn-primary {
+  background: linear-gradient(135deg, var(--purple-light), var(--purple-dark));
+  color: #FFFFFF;
+  box-shadow: 0 6px 20px var(--purple-glow);
+}
+
+.btn-tier.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px var(--purple-glow);
+}
+
+.btn-tier.btn-outline {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+}
+
+.btn-tier.btn-outline:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+  transform: translateY(-2px);
+}
+
+.btn-tier.btn-outline-gold {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.02));
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+}
+
+.btn-tier.btn-outline-gold:hover {
+  background: var(--gold);
+  color: #1A1005;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+}
+
+/* ─── Guarantee Strip ─── */
+.pricing-guarantee-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+}
+
+.guarantee-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.g-icon {
+  font-size: 1rem;
+}
+
+@media (max-width: 960px) {
+  .pricing-cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+  }
+
+  .pricing-card.popular {
+    transform: none;
+  }
+  .pricing-card.popular:hover {
+    transform: translateY(-6px);
+  }
+}

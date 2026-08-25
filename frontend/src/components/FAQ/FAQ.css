@@ -1,24 +1,39 @@
-.faq {
-  background: var(--section-alt);
-  padding: 96px 48px;
-  transition: background 0.3s;
+/* ─── FAQ Section Styles ─── */
+.faq-section {
+  padding: 100px 24px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.faq-header {
+  margin-bottom: 48px;
 }
 
 .faq-list {
-  max-width: 740px;
-  margin: 60px auto 0;
+  max-width: 800px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .faq-item {
-  background: var(--faq-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--card-shadow);
-  transition: background 0.3s;
+  transition: all 0.25s ease;
+}
+
+.faq-item:hover {
+  border-color: var(--purple-light);
+}
+
+.faq-item.open {
+  border-color: var(--purple);
+  box-shadow: 0 8px 24px rgba(108, 59, 255, 0.1);
 }
 
 .faq-q {
@@ -26,44 +41,73 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 20px 26px;
+  padding: 22px 26px;
   cursor: pointer;
   background: none;
   border: none;
   text-align: left;
-  font-size: 0.96rem;
-  font-weight: 500;
-  color: var(--text);
-  transition: background 0.2s;
   gap: 16px;
 }
-.faq-q:hover { background: rgba(108, 59, 255, 0.05); }
+
+.faq-question-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.faq-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.faq-item.open .faq-icon-wrap {
+  background: var(--purple);
+  color: #FFFFFF;
+}
 
 .faq-icon {
-  color: var(--purple);
   font-size: 1.2rem;
-  flex-shrink: 0;
-  transition: transform 0.3s;
+  font-weight: 700;
   line-height: 1;
+  color: var(--purple);
 }
-.faq-item.open .faq-icon { transform: rotate(45deg); }
+
+.faq-item.open .faq-icon {
+  color: #FFFFFF;
+}
 
 .faq-a {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s ease;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.faq-item.open .faq-a { max-height: 240px; }
+
+.faq-item.open .faq-a {
+  max-height: 300px;
+}
 
 .faq-a p {
-  padding: 0 26px 20px;
+  padding: 0 26px 24px;
   color: var(--muted);
-  font-size: 0.91rem;
-  line-height: 1.78;
+  font-size: 0.94rem;
+  line-height: 1.7;
 }
 
-@media (max-width: 768px) {
-  .faq { padding: 64px 20px; }
-  .faq-q { padding: 16px 20px; font-size: 0.92rem; }
-  .faq-a p { padding: 0 20px 16px; }
+@media (max-width: 600px) {
+  .faq-q {
+    padding: 18px 20px;
+  }
+  
+  .faq-question-text {
+    font-size: 0.94rem;
+  }
 }

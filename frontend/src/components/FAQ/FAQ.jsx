@@ -1,61 +1,74 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import './FAQ.css';
 
 const FAQS = [
   {
-    q: 'Do I need any design experience to use DigiInvite?',
-    a: 'Not at all. DigiInvite is designed for everyone. Simply choose a template, fill in your event details, and the AI does the heavy lifting. You can also customise everything using our drag-and-drop editor — no design background required.',
+    q: 'How does the AI Invitation Generator work?',
+    a: 'Simply select your celebration type (Wedding, Birthday, Housewarming, Sangeet, etc.) and describe your theme or cultural preference. In under 30 seconds, our AI composes a custom-themed, high-resolution invitation card background with perfect editorial layout.',
   },
   {
-    q: 'What file formats can I download my invitation in?',
-    a: 'Depending on your plan, you can download as PNG, JPEG, PDF, Instagram Story (1080×1920), and WhatsApp optimised image. Animated plans also include MP4 video exports.',
+    q: 'Can I edit the generated design and text afterwards?',
+    a: 'Absolutely! Every generated invitation opens in our canvas studio editor. You can freely change fonts, reposition text, adjust color palettes, upload couple photos, and customize every fine detail.',
   },
   {
-    q: 'How does the RSVP system work?',
-    a: 'Every invitation automatically gets a unique RSVP page hosted by DigiInvite. Guests can open it via a QR code or direct link, confirm attendance, add their name, phone number, and how many people are joining. Track all responses in real time from your dashboard.',
+    q: 'How does guest RSVP tracking and WhatsApp delivery work?',
+    a: 'Every invitation includes a personalized RSVP web link and dynamic QR code. Guests can confirm attendance with +1 headcount and dietary preferences in 1 tap without installing any apps. All responses update your live dashboard instantly.',
   },
   {
-    q: 'Can I share my invitation on WhatsApp?',
-    a: 'Yes! After creating your invitation, share it directly via WhatsApp with a single tap. You can also share via Email, Instagram, Facebook, or copy a direct link — all from within DigiInvite.',
+    q: 'What formats can I download my invitation in?',
+    a: 'You can export in Ultra-HD 300 DPI print-ready PDF, WhatsApp-optimized PNG, Instagram Story (1080×1920), and JPG—all completely watermark-free on premium tiers.',
   },
   {
-    q: 'Are payments secure? What methods are accepted?',
-    a: 'All payments are processed securely through Razorpay, one of India\'s most trusted payment gateways. You can pay with UPI, credit cards, debit cards, net banking, and wallets. We never store your payment information.',
+    q: 'Are Indian regional languages supported?',
+    a: 'Yes! DigiInvite supports Hindi, Gujarati, Tamil, Telugu, Marathi, Malayalam, Bengali, Kannada, Punjabi, and English. We also support bilingual dual-language layouts with authentic cultural Shlokas and symbols.',
   },
   {
-    q: 'Can I create invitations in regional Indian languages?',
-    a: 'Yes! DigiInvite supports multiple languages including Hindi, Gujarati, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, and more. Simply select your preferred language when filling in invitation details.',
+    q: 'How do payments work? Is it secure?',
+    a: 'Payments are handled securely via Razorpay with support for UPI, Google Pay, PhonePe, Paytm, credit/debit cards, and Net Banking. You pay once per celebration with no recurring subscriptions.',
   },
 ];
 
 export default function FAQ() {
-  const [openIdx, setOpenIdx] = useState(null);
+  const [openIdx, setOpenIdx] = useState(0);
 
-  const toggle = i => setOpenIdx(prev => (prev === i ? null : i));
+  const toggle = (i) => setOpenIdx((prev) => (prev === i ? null : i));
 
   return (
-    <section className="faq" id="faq">
+    <section className="faq-section" id="faq">
       <div className="section-inner">
-        <div className="text-center">
-          <span className="section-tag">FAQ</span>
-          <h2 className="section-title">Frequently Asked Questions</h2>
+        <div className="text-center faq-header">
+          <span className="section-tag">Frequently Asked Questions</span>
+          <h2 className="section-title">Everything You Need to Know</h2>
+          <p className="section-sub">
+            Got questions about creating your invitation, custom designs, or guest RSVPs? We have answers.
+          </p>
         </div>
 
         <div className="faq-list">
-          {FAQS.map(({ q, a }, i) => (
-            <div
-              key={i}
-              className={`faq-item ${openIdx === i ? 'open' : ''}`}
-            >
-              <button className="faq-q" onClick={() => toggle(i)}>
-                <span>{q}</span>
-                <span className="faq-icon">+</span>
-              </button>
-              <div className="faq-a">
-                <p>{a}</p>
+          {FAQS.map(({ q, a }, i) => {
+            const isOpen = openIdx === i;
+            return (
+              <div
+                key={q}
+                className={`faq-item ${isOpen ? 'open' : ''}`}
+              >
+                <button
+                  className="faq-q"
+                  onClick={() => toggle(i)}
+                  type="button"
+                  aria-expanded={isOpen}
+                >
+                  <span className="faq-question-text">{q}</span>
+                  <span className="faq-icon-wrap">
+                    <span className="faq-icon">{isOpen ? '−' : '+'}</span>
+                  </span>
+                </button>
+                <div className="faq-a">
+                  <p>{a}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

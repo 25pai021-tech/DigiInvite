@@ -1,0 +1,275 @@
+/* ─── AI Creation Experience Section ─── */
+.ai-experience {
+  padding: 100px 24px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-header {
+  margin-bottom: 48px;
+}
+
+/* ─── Preset Chips ─── */
+.ai-preset-chips-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.ai-preset-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  padding: 10px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--card-shadow);
+  text-align: left;
+}
+
+.ai-preset-chip:hover {
+  border-color: var(--purple);
+  transform: translateY(-2px);
+}
+
+.ai-preset-chip.active {
+  border-color: var(--purple);
+  background: rgba(108, 59, 255, 0.08);
+  box-shadow: 0 6px 24px rgba(108, 59, 255, 0.18);
+}
+
+.preset-tag-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--purple);
+  letter-spacing: 0.05em;
+}
+
+.preset-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ─── Playground Grid ─── */
+.ai-playground-box {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 36px;
+  align-items: center;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ─── Terminal Box ─── */
+.playground-terminal {
+  background: var(--bg2);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.terminal-header {
+  background: var(--bg3);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--divider);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--purple);
+  letter-spacing: 0.03em;
+}
+
+.terminal-state {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: monospace;
+}
+
+.terminal-body {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.terminal-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.terminal-prompt-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg3);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border-left: 3px solid var(--purple);
+}
+
+.terminal-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider);
+}
+
+.meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meta-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.meta-swatches {
+  display: flex;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.meta-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.terminal-cta-wrap {
+  padding-top: 8px;
+}
+
+/* ─── Rendered Live Card ─── */
+.playground-preview-card {
+  position: relative;
+  height: 420px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.playground-preview-card.rendering {
+  opacity: 0.6;
+  transform: scale(0.97);
+}
+
+.card-ambient-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  filter: blur(40px);
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.rendered-card-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 320px;
+  height: 100%;
+  background: linear-gradient(150deg, #18112C 0%, #291845 50%, #120A24 100%);
+  border: 1.5px solid var(--gold);
+  border-radius: 20px;
+  padding: 30px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+}
+
+.rc-badge-top {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+}
+
+.rc-names {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.rc-divider {
+  width: 40px;
+  height: 2px;
+  margin: 8px 0;
+}
+
+.rc-event {
+  font-size: 0.88rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.rc-date {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 4px;
+}
+
+.rc-footer-tags {
+  display: flex;
+  gap: 10px;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 860px) {
+  .ai-playground-box {
+    grid-template-columns: 1fr;
+  }
+  
+  .playground-preview-card {
+    height: 380px;
+  }
+}

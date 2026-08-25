@@ -217,22 +217,24 @@ function TemplateCard({ template, onCustomize }) {
           <div className="tpl-image-fallback" />
         )}
 
-        {Array.isArray(layout) && layout.map((item) => (
-          <span
-            key={item.id}
-            className="tpl-overlay-text"
-            style={{
-              left: `${item.x}%`,
-              top: `${item.y}%`,
-              fontFamily: item.font || 'Inter',
-              fontSize: `${(item.size || 20) * 0.42}px`,   // scaled down for the smaller thumbnail
-              color: item.color || '#1a1a1a',
-              textAlign: item.align || 'center',
-            }}
-          >
-            {item.sample}
-          </span>
-        ))}
+        {Array.isArray(layout) && layout
+          .filter((item) => item.sample && item.sample.length <= 40)
+          .map((item) => (
+            <span
+              key={item.id}
+              className="tpl-overlay-text"
+              style={{
+                left: `${item.x}%`,
+                top: `${item.y}%`,
+                fontFamily: item.font || 'Inter',
+                fontSize: `${Math.max(8, (item.size || 20) * 0.35)}px`,
+                color: item.color || '#1a1a1a',
+                textAlign: item.align || 'center',
+              }}
+            >
+              {item.sample}
+            </span>
+          ))}
       </div>
       <button className="tpl-customize-btn" onClick={() => onCustomize(template)}>
         Customize

@@ -90,6 +90,7 @@
   padding: 4px 2px 8px;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  align-items: stretch;
 }
 .tp-track::-webkit-scrollbar { display: none; }
 
@@ -97,6 +98,7 @@
   flex: 0 0 auto;
   width: 230px;
   scroll-snap-align: start;
+  align-self: stretch; 
 }
 
 /* ─── Grid (See All / expanded) ─── */
@@ -140,12 +142,13 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+
 }
 
 .tpl-image-wrap {
   border-radius: 16px;
   overflow: hidden;
-  aspect-ratio: 3 / 4;
+  /* aspect-ratio: 3 / 4; */
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
@@ -171,9 +174,22 @@
 
 .tpl-image-wrap img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
+
 }
+
+.tpl-overlay-text {
+  position: absolute;
+  transform: translate(-50%, -50%);   /* centers the text ON the point, matching the Editor */
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.2;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 .tpl-image-fallback {
   width: 100%;
@@ -192,6 +208,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
+  margin-top: auto; 
 }
 .tpl-customize-btn:hover {
   background: var(--purple-dark);

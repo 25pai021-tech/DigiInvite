@@ -17,9 +17,13 @@ const CATEGORY_MAP = [
   { test: /engagement/i, key: 'engagement', label: 'Engagement Parties', emoji: '💫', order: 3 },
   { test: /corporate|conference|gala|networking|business/i, key: 'corporate', label: 'Corporate Events', emoji: '💼', order: 4 },
   { test: /reception/i, key: 'reception', label: 'Reception', emoji: '🥂', order: 5 },
+  { test: /festival/i, key: 'festival', label: 'Festivals', emoji: '🎉', order: 5.2 },
+  { test: /graduation/i, key: 'graduation', label: 'Graduation', emoji: '🎓', order: 5.5 },
   { test: /mehndi/i, key: 'mehndi', label: 'Mehndi Ceremony', emoji: '🌿', order: 6 },
   { test: /griha|housewarming/i, key: 'housewarming', label: 'Housewarming', emoji: '🏠', order: 7 },
-  { test: /baby shower/i, key: 'babyshower', label: 'Baby Shower', emoji: '🍼', order: 8 },
+  { test: /baby[\s-]?shower/i, key: 'babyshower', label: 'Baby Shower', emoji: '🍼', order: 8 },
+  { test: /anniversary/i, key: 'anniversary', label: 'Anniversary', emoji: '💐', order: 9 },
+  { test: /^custom$/i, key: 'custom', label: 'Custom Designs', emoji: '✨', order: 10 },
 ];
 
 function categorize(eventType = '') {

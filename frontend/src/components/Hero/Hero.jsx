@@ -87,8 +87,8 @@ export default function Hero() {
           </div>
 
           <h1 className="hero-title">
-            Bespoke Invitations &amp; <br />
-            <span className="hero-title-gradient">Effortless RSVPs</span>
+            Create Beautiful Digital <br />
+            <span className="hero-title-gradient">Invitations in Minutes</span>
           </h1>
 
           <p className="hero-sub">
@@ -103,21 +103,18 @@ export default function Hero() {
             </Link>
 
             <Link to="/templates" className="btn-hero-secondary">
-              Browse 500+ Templates
+              Browse Templates
             </Link>
           </div>
 
           <div className="hero-trust-bar">
             <div className="trust-pill">
-              <span className="trust-icon">👑</span>
               <span>Royal &amp; Cultural Motifs</span>
             </div>
             <div className="trust-pill">
-              <span className="trust-icon">💬</span>
               <span>1-Tap WhatsApp RSVP</span>
             </div>
             <div className="trust-pill">
-              <span className="trust-icon">⬇️</span>
               <span>Ultra-HD Print &amp; Mobile</span>
             </div>
           </div>

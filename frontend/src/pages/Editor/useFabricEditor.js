@@ -1,11 +1,50 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { supabase } from '../../lib/supabaseClient';
+import {
+  SUPPORTED_LANGUAGES,
+  LANGUAGE_CONFIG,
+  translateText,
+  isDynamicField,
+  fitTranslatedText,
+} from './languageService';
 
 const CANVAS_W = 800;
 const CANVAS_H = 1000;
 const HISTORY_LIMIT = 100;
 const PREVIEW_BUCKET = 'design-uploads';
+
+const CUSTOM_PROPS = [
+  'name',
+  'locked',
+  '__uid',
+  'originalText',
+  'sourceLanguage',
+  'activeLanguage',
+  'isTranslatable',
+  'translations',
+  'translationMode',
+  'originalFontFamily',
+  'originalFontSize',
+  'fieldType',
+];
+
+function initTextObjectMetadata(obj, fieldType = 'custom') {
+  if (!obj) return obj;
+  const isDyn = isDynamicField(obj.text, obj.name, fieldType);
+  obj.set({
+    originalText: obj.text || '',
+    sourceLanguage: 'en',
+    activeLanguage: 'en',
+    isTranslatable: !isDyn,
+    fieldType: fieldType || (isDyn ? 'protected' : 'text'),
+    translations: { en: obj.text || '' },
+    translationMode: 'replace',
+    originalFontFamily: obj.fontFamily || 'Inter',
+    originalFontSize: obj.fontSize || 24,
+  });
+  return obj;
+}
 
 /**
  * Builds the default set of editable Fabric text objects from a freshly
@@ -34,69 +73,69 @@ function buildDefaultObjects(request) {
   const objects = [];
   const centerY = CANVAS_H / 2;
 
-  objects.push(
-    new fabric.IText(request.event_name || 'Your Event', {
-      left: CANVAS_W / 2,
-      top: centerY - 120,
-      originX: 'center',
-      originY: 'center',
-      fontFamily: 'Playfair Display',
-      fontSize: 56,
-      fontWeight: '700',
-      fill: '#1a1a1a',
-      textAlign: 'center',
-      name: 'title',
-    })
-  );
+  const title = new fabric.IText(request.event_name || 'Your Event', {
+    left: CANVAS_W / 2,
+    top: centerY - 120,
+    originX: 'center',
+    originY: 'center',
+    fontFamily: 'Playfair Display',
+    fontSize: 56,
+    fontWeight: '700',
+    fill: '#1a1a1a',
+    textAlign: 'center',
+    name: 'title',
+  });
+  initTextObjectMetadata(title, 'title');
+  objects.push(title);
 
   const dateLine = [formatDate(request.date), formatTime(request.time)].filter(Boolean).join('  •  ');
   if (dateLine) {
-    objects.push(
-      new fabric.IText(dateLine, {
-        left: CANVAS_W / 2,
-        top: centerY - 20,
-        originX: 'center',
-        originY: 'center',
-        fontFamily: 'Inter',
-        fontSize: 28,
-        fill: '#333333',
-        textAlign: 'center',
-        name: 'date',
-      })
-    );
+    const dateObj = new fabric.IText(dateLine, {
+      left: CANVAS_W / 2,
+      top: centerY - 20,
+      originX: 'center',
+      originY: 'center',
+      fontFamily: 'Inter',
+      fontSize: 28,
+      fill: '#333333',
+      textAlign: 'center',
+      name: 'date',
+    });
+    initTextObjectMetadata(dateObj, 'date');
+    objects.push(dateObj);
   }
 
   if (request.venue) {
-    objects.push(
-      new fabric.IText(request.venue, {
-        left: CANVAS_W / 2,
-        top: centerY + 50,
-        originX: 'center',
-        originY: 'center',
-        fontFamily: 'Inter',
-        fontSize: 24,
-        fill: '#555555',
-        textAlign: 'center',
-        name: 'venue',
-      })
-    );
+    const venueObj = new fabric.IText(request.venue, {
+      left: CANVAS_W / 2,
+      top: centerY + 50,
+      originX: 'center',
+      originY: 'center',
+      fontFamily: 'Inter',
+      fontSize: 24,
+      fill: '#555555',
+      textAlign: 'center',
+      name: 'venue',
+    });
+    initTextObjectMetadata(venueObj, 'venue');
+    objects.push(venueObj);
   }
 
   if (request.special_message) {
-    objects.push(
-      new fabric.Textbox(request.special_message, {
-        left: CANVAS_W / 2,
-        top: centerY + 130,
-        width: 560,
-        originX: 'center',
-        originY: 'center',
-        fontFamily: 'Inter',
-        fontSize: 20,
-        fill: '#6b6585',
-        textAlign: 'center',
-        name: 'message',
-      })
-    );
+    const messageObj = new fabric.Textbox(request.special_message, {
+      left: CANVAS_W / 2,
+      top: centerY + 130,
+      width: 560,
+      originX: 'center',
+      originY: 'center',
+      fontFamily: 'Inter',
+      fontSize: 20,
+      fill: '#6b6585',
+      textAlign: 'center',
+      name: 'message',
+    });
+    initTextObjectMetadata(messageObj, 'message');
+    objects.push(messageObj);
   }
 
   return objects;
@@ -119,7 +158,7 @@ function buildObjectsFromLayout(layout, request, bgHeight = CANVAS_H) {
     const Ctor = item.field === 'venue' || item.field === 'special_message' ? fabric.Textbox : fabric.IText;
     const heightScale = bgHeight / CANVAS_H;
 
-    return new Ctor(text, {
+    const obj = new Ctor(text, {
       left: (item.x / 100) * CANVAS_W,
       top: (item.y / 100) * bgHeight,
       originX: 'center',
@@ -131,6 +170,8 @@ function buildObjectsFromLayout(layout, request, bgHeight = CANVAS_H) {
       textAlign: item.align || 'center',
       name: item.id || `text_${item.field || 'layer'}`,
     });
+    initTextObjectMetadata(obj, item.field || 'layer');
+    return obj;
   });
 }
 
@@ -173,6 +214,11 @@ export function useFabricEditor({ request, onSaved }) {
   const refreshLayersRef = useRef(() => {});
 
   const [activeObject, setActiveObject] = useState(null);
+  const [activeLanguage, setActiveLanguage] = useState('en');
+  const [translationMode, setTranslationMode] = useState('replace');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translationMessage, setTranslationMessage] = useState('');
+  const [selectedTranslationMessage, setSelectedTranslationMessage] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [zoom, setZoomState] = useState(1);
   const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
@@ -202,7 +248,7 @@ export function useFabricEditor({ request, onSaved }) {
     canvasRef.current = canvas;
 
     const finishLoad = () => {
-      undoStack.current = [JSON.stringify(canvas.toJSON(['name', 'locked', '__uid']))];
+      undoStack.current = [JSON.stringify(canvas.toJSON(CUSTOM_PROPS))];
       redoStack.current = [];
       setIsDirty(false);
       canvas.requestRenderAll();
@@ -250,10 +296,20 @@ export function useFabricEditor({ request, onSaved }) {
 
     if (request.editor_state) {
       suppressHistory.current = true;
-      canvas.loadFromJSON(request.editor_state, () => {
+      try {
+        const state = typeof request.editor_state === 'string' ? JSON.parse(request.editor_state) : request.editor_state;
+        if (state?.languageState) {
+          if (state.languageState.activeLanguage) setActiveLanguage(state.languageState.activeLanguage);
+          if (state.languageState.translationMode) setTranslationMode(state.languageState.translationMode);
+        }
+        canvas.loadFromJSON(state, () => {
+          suppressHistory.current = false;
+          finishLoad();
+        });
+      } catch (e) {
         suppressHistory.current = false;
         finishLoad();
-      });
+      }
     } else {
       setupWithBackground();
     }
@@ -279,12 +335,19 @@ export function useFabricEditor({ request, onSaved }) {
     canvas.on('object:added', refreshLayers);
     canvas.on('object:removed', refreshLayers);
     canvas.on('object:modified', refreshLayers);
+    canvas.on('text:changed', (e) => {
+      const obj = e.target;
+      if (obj && (obj.activeLanguage === 'en' || !obj.activeLanguage)) {
+        obj.originalText = obj.text;
+        obj.translations = { ...(obj.translations || {}), en: obj.text };
+      }
+    });
     refreshLayersRef.current = refreshLayers;
 
     // ── history tracking ──
     const pushHistory = () => {
       if (suppressHistory.current) return;
-      const json = JSON.stringify(canvas.toJSON(['name', 'locked', '__uid']));
+      const json = JSON.stringify(canvas.toJSON(CUSTOM_PROPS));
       undoStack.current.push(json);
       if (undoStack.current.length > HISTORY_LIMIT) undoStack.current.shift();
       redoStack.current = [];
@@ -439,10 +502,15 @@ export function useFabricEditor({ request, onSaved }) {
     const canvas = canvasRef.current;
     const obj = canvas?.getActiveObject();
     if (!obj) return;
+    if (props.text !== undefined && (obj.activeLanguage === 'en' || !obj.activeLanguage)) {
+      props.originalText = props.text;
+      props.translations = { ...(obj.translations || {}), en: props.text };
+    }
     obj.set(props);
     obj.setCoords();
     canvas.requestRenderAll();
     canvas.fire('object:modified', { target: obj });
+    setActiveObject({ ...obj });
   }, []);
 
   const duplicateObject = useCallback((target) => {
@@ -567,6 +635,7 @@ export function useFabricEditor({ request, onSaved }) {
       fontSize: 24,
       fill: '#1a1a1a',
     });
+    initTextObjectMetadata(text, 'custom');
     canvas.add(text);
     canvas.setActiveObject(text);
     canvas.requestRenderAll();
@@ -745,6 +814,198 @@ export function useFabricEditor({ request, onSaved }) {
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo, duplicateActive, deleteActive]);
 
+  // ── translation actions ──────────────────────────────────────
+  const translateInvitation = useCallback(async (targetLang, mode = 'replace') => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    setIsTranslating(true);
+    setTranslationMessage('');
+    // Realistic async delay for loading state
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    try {
+      const textObjects = canvas.getObjects().filter(
+        (o) => (o.type === 'i-text' || o.type === 'textbox' || o.type === 'text') && o.name !== '__background'
+      );
+
+      let translatedCount = 0;
+      let unavailableCount = 0;
+
+      for (const obj of textObjects) {
+        // Ensure initial metadata
+        if (!obj.originalText) {
+          obj.originalText = obj.text || '';
+          obj.translations = { en: obj.originalText };
+          obj.sourceLanguage = 'en';
+          obj.activeLanguage = 'en';
+          obj.translationMode = 'replace';
+          obj.originalFontFamily = obj.fontFamily;
+          obj.originalFontSize = obj.fontSize;
+          obj.isTranslatable = !isDynamicField(obj.originalText, obj.name, obj.fieldType);
+        }
+
+        // Skip dynamic/protected fields
+        if (obj.isTranslatable === false || isDynamicField(obj.originalText, obj.name, obj.fieldType)) {
+          continue;
+        }
+
+        // Switching back to English
+        if (targetLang === 'en') {
+          obj.set({
+            text: obj.originalText,
+            fontFamily: obj.originalFontFamily || 'Inter',
+            fontSize: obj.originalFontSize || obj.fontSize,
+            activeLanguage: 'en',
+            translationMode: 'replace',
+          });
+          fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
+          translatedCount++;
+          continue;
+        }
+
+        // Check if translation is already cached
+        let targetText = obj.translations?.[targetLang];
+        if (!targetText) {
+          const res = await translateText(obj.originalText, obj.sourceLanguage || 'en', targetLang);
+          if (res.success && res.text) {
+            targetText = res.text;
+            obj.translations = { ...(obj.translations || {}), [targetLang]: targetText };
+          }
+        }
+
+        if (targetText) {
+          const langCfg = LANGUAGE_CONFIG[targetLang];
+          const newFont = langCfg?.fontFamily || obj.fontFamily;
+
+          if (mode === 'bilingual') {
+            obj.set({
+              text: `${obj.originalText}\n${targetText}`,
+              activeLanguage: targetLang,
+              translationMode: 'bilingual',
+              fontFamily: newFont,
+            });
+          } else {
+            obj.set({
+              text: targetText,
+              activeLanguage: targetLang,
+              translationMode: 'replace',
+              fontFamily: newFont,
+            });
+          }
+          fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
+          translatedCount++;
+        } else {
+          unavailableCount++;
+        }
+      }
+
+      canvas.requestRenderAll();
+      const json = JSON.stringify(canvas.toJSON(CUSTOM_PROPS));
+      undoStack.current.push(json);
+      if (undoStack.current.length > HISTORY_LIMIT) undoStack.current.shift();
+      redoStack.current = [];
+      setIsDirty(true);
+      refreshLayersRef.current();
+
+      setActiveLanguage(targetLang);
+      setTranslationMode(mode);
+
+      if (unavailableCount > 0 && translatedCount === 0) {
+        setTranslationMessage('Translation unavailable for this text. Original text has been preserved.');
+      } else if (unavailableCount > 0) {
+        setTranslationMessage(`Translated with ${unavailableCount} phrase(s) preserved in original.`);
+      } else {
+        setTranslationMessage('');
+      }
+    } catch (err) {
+      console.error('Translation failed:', err);
+      setTranslationMessage('Translation failed. Original text preserved.');
+    } finally {
+      setIsTranslating(false);
+    }
+  }, []);
+
+  const translateSelectedText = useCallback(async (targetLang, mode = 'replace') => {
+    const canvas = canvasRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!canvas || !obj || !(obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text')) return;
+
+    setIsTranslating(true);
+    setSelectedTranslationMessage('');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    try {
+      if (!obj.originalText) {
+        obj.originalText = obj.text || '';
+        obj.translations = { en: obj.originalText };
+        obj.sourceLanguage = 'en';
+        obj.activeLanguage = 'en';
+        obj.translationMode = 'replace';
+        obj.originalFontFamily = obj.fontFamily;
+        obj.originalFontSize = obj.fontSize;
+        obj.isTranslatable = !isDynamicField(obj.originalText, obj.name, obj.fieldType);
+      }
+
+      if (targetLang === 'en') {
+        obj.set({
+          text: obj.originalText,
+          fontFamily: obj.originalFontFamily || 'Inter',
+          fontSize: obj.originalFontSize || obj.fontSize,
+          activeLanguage: 'en',
+          translationMode: 'replace',
+        });
+        fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
+      } else {
+        let targetText = obj.translations?.[targetLang];
+        if (!targetText) {
+          const res = await translateText(obj.originalText, obj.sourceLanguage || 'en', targetLang);
+          if (res.success && res.text) {
+            targetText = res.text;
+            obj.translations = { ...(obj.translations || {}), [targetLang]: targetText };
+          }
+        }
+
+        if (targetText) {
+          const langCfg = LANGUAGE_CONFIG[targetLang];
+          const newFont = langCfg?.fontFamily || obj.fontFamily;
+          if (mode === 'bilingual') {
+            obj.set({
+              text: `${obj.originalText}\n${targetText}`,
+              activeLanguage: targetLang,
+              translationMode: 'bilingual',
+              fontFamily: newFont,
+            });
+          } else {
+            obj.set({
+              text: targetText,
+              activeLanguage: targetLang,
+              translationMode: 'replace',
+              fontFamily: newFont,
+            });
+          }
+          fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
+        } else {
+          setSelectedTranslationMessage('Translation unavailable for this text. Original text has been preserved.');
+        }
+      }
+
+      canvas.requestRenderAll();
+      const json = JSON.stringify(canvas.toJSON(CUSTOM_PROPS));
+      undoStack.current.push(json);
+      if (undoStack.current.length > HISTORY_LIMIT) undoStack.current.shift();
+      redoStack.current = [];
+      setIsDirty(true);
+      refreshLayersRef.current();
+      setActiveObject({ ...obj });
+    } catch (err) {
+      console.error('Selected text translation failed:', err);
+      setSelectedTranslationMessage('Translation unavailable for this text. Original text has been preserved.');
+    } finally {
+      setIsTranslating(false);
+    }
+  }, []);
+
   // ── save ─────────────────────────────────────────────────────
   const save = useCallback(async () => {
     const canvas = canvasRef.current;
@@ -752,7 +1013,8 @@ export function useFabricEditor({ request, onSaved }) {
     setSaveState('saving');
     setSaveError('');
     try {
-      const json = canvas.toJSON(['name', 'locked', '__uid']);
+      const json = canvas.toJSON(CUSTOM_PROPS);
+      json.languageState = { activeLanguage, translationMode };
       const dataUrl = canvas.toDataURL({ format: 'png', quality: 0.9 });
 
       const {
@@ -821,7 +1083,7 @@ export function useFabricEditor({ request, onSaved }) {
       setSaveError(err.message || 'Unknown error while saving.');
       setSaveState('error');
     }
-  }, [request, onSaved]);
+  }, [request, onSaved, activeLanguage, translationMode]);
 
   // ── autosave every 30s ───────────────────────────────────────
   useEffect(() => {
@@ -869,6 +1131,17 @@ export function useFabricEditor({ request, onSaved }) {
     gridEnabled,
     snapToGrid,
     snapToObjects,
+    activeLanguage,
+    setActiveLanguage,
+    translationMode,
+    setTranslationMode,
+    isTranslating,
+    translationMessage,
+    selectedTranslationMessage,
+    translateInvitation,
+    translateSelectedText,
+    SUPPORTED_LANGUAGES,
+    LANGUAGE_CONFIG,
     toggleGrid,
     toggleSnapToGrid,
     toggleSnapToObjects,

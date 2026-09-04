@@ -230,6 +230,11 @@ export default function Editor() {
           onSetBackgroundColor={editor.setBackgroundColor}
           onSetBackgroundGradient={editor.setBackgroundGradient}
           onSetBackgroundImageFile={editor.setBackgroundImageFile}
+          activeLanguage={editor.activeLanguage}
+          translationMode={editor.translationMode}
+          onTranslateInvitation={editor.translateInvitation}
+          isTranslating={editor.isTranslating}
+          translationMessage={editor.translationMessage}
         />
 
         <div className="editor-canvas-column">
@@ -290,7 +295,13 @@ export default function Editor() {
         </div>
 
         <div className="editor-right-column">
-          <PropertiesPanel object={editor.activeObject} onUpdate={editor.updateActive} />
+          <PropertiesPanel
+            object={editor.activeObject}
+            onUpdate={editor.updateActive}
+            onTranslateSelected={editor.translateSelectedText}
+            isTranslating={editor.isTranslating}
+            selectedTranslationMessage={editor.selectedTranslationMessage}
+          />
           <LayersPanel
             layers={editor.layers}
             activeObject={editor.activeObject}

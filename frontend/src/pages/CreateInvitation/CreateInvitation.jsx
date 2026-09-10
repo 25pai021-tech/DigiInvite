@@ -127,7 +127,8 @@ export default function CreateInvitation() {
         <StepIndicator currentStep={step} />
         {pickedTemplate && (
           <div style={{
-            background: 'var(--card, #fff)', border: '1px solid var(--border, #eee)',
+            background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+            color: 'var(--color-text)',
             borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 14,
           }}>
             Customizing: <strong>{pickedTemplate.name}</strong>

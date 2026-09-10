@@ -6,69 +6,69 @@
 
 /* ─── THEME TOKENS ─── */
 :root[data-theme="light"] {
-  --bg:             #F5F0FF;
+  --bg:             #FBF3EC;
   --bg2:            #FFFFFF;
-  --bg3:            #EDE8FA;
+  --bg3:            #F3E3E7;
   --nav-bg:         rgba(255, 255, 255, 0.88);
   --nav-border:     rgba(0, 0, 0, 0.07);
-  --text:           #111018;
-  --text2:          #3d3856;
-  --muted:          #6b6585;
-  --card-bg:        #FFFFFF;
+  --text:           #1A0E12;
+  --text2:          #4a2e35;
+  --muted:          #7a5c62;
+  --color-text-muted:        #FFFFFF;
   --card-border:    rgba(0, 0, 0, 0.07);
-  --card-shadow:    0 4px 24px rgba(108, 59, 255, 0.08);
-  --feature-icon-bg:#EDE8FA;
-  --section-alt:    #F8F5FF;
+  --card-shadow:    0 4px 24px rgba(122, 31, 61, 0.10);
+  --feature-icon-bg:#F6E6EA;
+  --section-alt:    #FBF3EC;
   --divider:        rgba(0, 0, 0, 0.08);
-  --footer-bg:      #1a1035;
+  --footer-bg:      #2A0F18;
   --footer-text:    rgba(255, 255, 255, 0.65);
-  --toggle-bg:      #e2ddf5;
-  --toggle-knob:    #6C3BFF;
-  --badge-bg:       rgba(108, 59, 255, 0.07);
-  --badge-border:   rgba(108, 59, 255, 0.18);
-  --badge-text:     #4a2fd4;
-  --hero-shadow:    0 32px 80px rgba(108, 59, 255, 0.22);
+  --toggle-bg:      #f0dde2;
+  --toggle-knob:    #7A1F3D;
+  --badge-bg:       rgba(122, 31, 61, 0.08);
+  --badge-border:   rgba(122, 31, 61, 0.2);
+  --badge-text:     #6b1a35;
+  --hero-shadow:    0 32px 80px rgba(122, 31, 61, 0.22);
   --faq-bg:         #FFFFFF;
-  --filter-inactive:#f0ecff;
-  --filter-muted:   #6b6585;
-  --section-tag:    #6C3BFF;
+  --filter-inactive:#f6e6ea;
+  --filter-muted:   #7a5c62;
+  --section-tag:    #7A1F3D;
 }
 
 :root[data-theme="dark"] {
-  --bg:             #0D0A1A;
-  --bg2:            #130F24;
-  --bg3:            #1C1535;
-  --nav-bg:         rgba(13, 10, 26, 0.88);
+  --bg:             #170A0E;
+  --bg2:            #1F1015;
+  --bg3:            #2B161C;
+  --nav-bg:         rgba(23, 10, 14, 0.88);
   --nav-border:     rgba(255, 255, 255, 0.08);
-  --text:           #F8F6FF;
-  --text2:          #c8c0e8;
-  --muted:          rgba(255, 255, 255, 0.52);
-  --card-bg:        rgba(255, 255, 255, 0.05);
+  --text:           #FBF3EC;
+  --text2:          #e0c7cd;
+  --muted:          rgba(255, 255, 255, 0.55);
+  --color-text-muted:        rgba(255, 255, 255, 0.05);
   --card-border:    rgba(255, 255, 255, 0.1);
-  --card-shadow:    0 4px 32px rgba(0, 0, 0, 0.3);
-  --feature-icon-bg:rgba(108, 59, 255, 0.18);
-  --section-alt:    #130F24;
+  --card-shadow:    0 4px 32px rgba(0, 0, 0, 0.35);
+  --feature-icon-bg:rgba(122, 31, 61, 0.22);
+  --section-alt:    #1F1015;
   --divider:        rgba(255, 255, 255, 0.08);
-  --footer-bg:      #080510;
+  --footer-bg:      #0E0609;
   --footer-text:    rgba(255, 255, 255, 0.5);
   --toggle-bg:      rgba(255, 255, 255, 0.1);
   --toggle-knob:    #D4AF37;
-  --badge-bg:       rgba(108, 59, 255, 0.15);
-  --badge-border:   rgba(108, 59, 255, 0.3);
-  --badge-text:     #b49dff;
+  --badge-bg:       rgba(122, 31, 61, 0.22);
+  --badge-border:   rgba(122, 31, 61, 0.4);
+  --badge-text:     #e39ab0;
   --hero-shadow:    0 32px 80px rgba(0, 0, 0, 0.6);
   --faq-bg:         rgba(255, 255, 255, 0.04);
   --filter-inactive:rgba(255, 255, 255, 0.06);
   --filter-muted:   rgba(255, 255, 255, 0.45);
-  --section-tag:    #a87fff;
+  --section-tag:    #e8a3b8;
 }
 
 /* ─── BRAND CONSTANTS ─── */
 :root {
-  --purple:       #6C3BFF;
-  --purple-light: #8B5CFF;
-  --purple-dark:  #4A1FE8;
-  --purple-glow:  rgba(108, 59, 255, 0.28);
+  --purple:       #7A1F3D;
+  --purple-light: #9E3A5A;
+  --purple-dark:  #5A1530;
+  --purple-glow:  rgba(122, 31, 61, 0.28);
   --gold:         #D4AF37;
   --gold-light:   #F0CE5E;
   --radius:       20px;
@@ -187,7 +187,7 @@ img { max-width: 100%; display: block; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--card-bg);
+  background: var(--color-text-muted);
   color: var(--text);
   border: 1.5px solid var(--card-border);
   border-radius: 50px;
@@ -236,7 +236,7 @@ img { max-width: 100%; display: block; }
 }
 
 .subtle-glass {
-  background: var(--card-bg);
+  background: var(--color-text-muted);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);

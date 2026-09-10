@@ -7,7 +7,7 @@ const API_URL = 'http://localhost:8000';
 
 const STATUS_COLORS = {
   'Pending': '#9ca3af',
-  'Draft': '#8b5cf6',
+  'Draft': '#7A1F3D',
   'Paid': '#14b8a6',
   'Completed': '#16a34a',
 };
@@ -177,11 +177,11 @@ export default function MyRequests() {
 }
 
 const cardStyle = {
-  background: 'var(--card, #fff)',
-  border: '1px solid var(--border, #eee)',
+  background: 'var(--card-bg)',
+  border: '1px solid var(--card-border)',
   borderRadius: 14,
   padding: '18px 20px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+  boxShadow: 'var(--card-shadow)',
 };
 const badgeStyle = {
   color: '#fff',

@@ -99,20 +99,20 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(135deg, #7A49FF, #5022E6);
+  background: linear-gradient(135deg, var(--purple-light), var(--purple-dark));
   color: #FFFFFF;
   font-size: 1rem;
   font-weight: 600;
   padding: 15px 30px;
   border-radius: 50px;
-  box-shadow: 0 8px 32px rgba(108, 59, 255, 0.35);
+  box-shadow: 0 8px 32px rgba(122, 31, 61, 0.35);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   text-decoration: none;
 }
 
 .btn-hero-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(108, 59, 255, 0.45);
+  box-shadow: 0 12px 40px rgba(122, 31, 61, 0.45);
   color: #FFFFFF;
 }
 

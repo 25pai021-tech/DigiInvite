@@ -2,7 +2,8 @@ import React from 'react';
 import { Input, Textarea } from '../Shared/Input';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[0-9+\-\s()]{7,15}$/;
+const PHONE_RE = /^[0-9]{10}$/;
+const URL_RE = /^https?:\/\/[^\s]+\.[^\s]{2,}$/i;
 
 export const REQUIRED_FIELDS = ['hostName', 'eventName', 'date', 'time', 'venue', 'phone', 'email'];
 
@@ -17,7 +18,10 @@ export function validateEventDetails(data) {
     errors.email = 'Enter a valid email address.';
   }
   if (data.phone && !PHONE_RE.test(data.phone)) {
-    errors.phone = 'Enter a valid phone number.';
+    errors.phone = 'Enter a valid 10-digit phone number.';
+  }
+  if (data.mapLink && data.mapLink.trim() && !URL_RE.test(data.mapLink.trim())) {
+    errors.mapLink = 'Enter a valid link starting with http:// or https://';
   }
   return errors;
 }
@@ -27,9 +31,15 @@ const showsCoupleNames = (eventType) => ['wedding', 'engagement', 'anniversary']
 export default function EventDetails({ data, errors, onChange, eventType }) {
   const set = (field) => (e) => onChange(field, e.target.value);
 
+  const handlePhoneChange = (e) => {
+    // Strip anything that isn't a digit, then hard-cap at 10 digits
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+    onChange('phone', digitsOnly);
+  };
+
   return (
     <div>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, margin: '0 0 4px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, margin: '0 0 4px', color: 'var(--color-text)' }}>
         Tell us about the event
       </h2>
       <p style={{ color: 'var(--color-text-muted)', fontSize: 14, margin: '0 0 24px' }}>
@@ -91,9 +101,11 @@ export default function EventDetails({ data, errors, onChange, eventType }) {
           label="Phone"
           required
           type="tel"
-          placeholder="+91 98765 43210"
+          inputMode="numeric"
+          maxLength={10}
+          placeholder="9876543210"
           value={data.phone}
-          onChange={set('phone')}
+          onChange={handlePhoneChange}
           error={errors.phone}
         />
         <Input
@@ -112,6 +124,7 @@ export default function EventDetails({ data, errors, onChange, eventType }) {
         placeholder="Optional — helps guests find the venue"
         value={data.mapLink}
         onChange={set('mapLink')}
+        error={errors.mapLink}
       />
 
       <Textarea

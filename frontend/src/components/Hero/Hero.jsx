@@ -252,7 +252,11 @@ export default function Hero() {
           </div>
 
           {/* Floating Subtle Interactive Micro-Badge */}
-          <div className="hero-floating-pill">
+          <div 
+          className="hero-floating-pill"
+          onClick={() => setIsFlipped(!isFlipped)}
+            style={{ cursor: 'pointer' }}
+          >
             <span className="pill-dot" />
             <span>Click to flip &amp; preview itinerary</span>
           </div>

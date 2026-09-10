@@ -45,7 +45,7 @@ export default function Dashboard() {
   const userName = user.user_metadata?.full_name || user.email;
 
   return (
-    <div className="di-root dash">
+    <div className="dash">
       <div className="dash-page">
         <div className="dash-hero">
           <div>

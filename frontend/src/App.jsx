@@ -15,6 +15,9 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 import Contact from './pages/Contact';
+import { Navigate } from 'react-router-dom';  
+
+
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
   return (
@@ -56,7 +59,7 @@ export default function App() {
               <Route path="/create-invitation" element={<CreateInvitation />} />
               <Route path="/templates" element={<TemplatesPage />} />
               <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
-              <Route path="/editor" element={<ComingSoon title="Invitation Editor" />} />
+              <Route path="/editor" element={<Navigate to="/my-requests" replace />} />
               <Route path="/editor/:requestId" element={<Editor />} />
               <Route path="/pricing"   element={<ComingSoon title="Pricing" />} />
               <Route path="/about"     element={<ComingSoon title="About Us" />} />

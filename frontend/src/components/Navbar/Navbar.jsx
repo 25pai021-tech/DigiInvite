@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import logo from '../../assets/logo.png';
@@ -14,6 +14,8 @@ export default function Navbar() {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const onEditorPage = location.pathname.startsWith('/editor');
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -31,7 +33,9 @@ export default function Navbar() {
 
       <ul className={`nav-links ${menuOpen ? 'open' : ''}`}>
         <li><NavLink to="/templates" onClick={() => setMenuOpen(false)}>Templates</NavLink></li>
-        <li><NavLink to="/editor" onClick={() => setMenuOpen(false)}>Editor</NavLink></li>
+        {onEditorPage && (
+          <li><NavLink to={location.pathname} onClick={() => setMenuOpen(false)}>Editor</NavLink></li>
+        )}
         <li><NavLink to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</NavLink></li>
         {user && (
           <li><NavLink to="/my-requests" onClick={() => setMenuOpen(false)}>My Requests</NavLink></li>

@@ -3,6 +3,8 @@
  * for the DigiInvite Multilingual Editor.
  */
 
+const API_URL = 'http://localhost:8000';
+
 export const SUPPORTED_LANGUAGES = [
   { id: 'en', name: 'English', nativeName: 'English', script: 'Latin' },
   { id: 'hi', name: 'Hindi', nativeName: 'हिन्दी', script: 'Devanagari' },
@@ -387,38 +389,50 @@ export async function translateText(text, sourceLanguage = 'en', targetLanguage 
     return { success: false, text: text, message: 'Invalid text' };
   }
 
-  // If target language is the same as source, return original
+  // same language (or back to English) → no translation needed
   if (targetLanguage === sourceLanguage || targetLanguage === 'en') {
     return { success: true, text: text };
   }
 
+  // 1) FAST PATH: curated dictionary (instant, best quality for common phrases)
   const key = normalizeKey(text);
   const entry = MOCK_TRANSLATIONS[key];
-
   if (entry && entry[targetLanguage]) {
-    return {
-      success: true,
-      text: entry[targetLanguage],
-    };
+    return { success: true, text: entry[targetLanguage] };
   }
-
-  // Check partial key matches (e.g., if text ends with exclamation or has extra spaces)
   const strippedKey = key.replace(/[!.,?]/g, '').trim();
   for (const dictKey of Object.keys(MOCK_TRANSLATIONS)) {
     if (dictKey.replace(/[!.,?]/g, '').trim() === strippedKey) {
       const match = MOCK_TRANSLATIONS[dictKey][targetLanguage];
-      if (match) {
-        return { success: true, text: match };
-      }
+      if (match) return { success: true, text: match };
     }
   }
 
-  // Translation not found in dictionary: preserve original text and inform user
-  return {
-    success: false,
-    text: text,
-    message: 'Translation unavailable for this text. Original text has been preserved.',
-  };
+  // 2) REAL TRANSLATION via backend (any phrase, not just the dictionary)
+  try {
+    const res = await fetch(`${API_URL}/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        texts: [text],
+        source_lang: sourceLanguage || 'en',
+        target_lang: targetLanguage,
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const translated = data?.translations?.[0];
+    if (translated && translated.trim()) {
+      return { success: true, text: translated };
+    }
+    throw new Error('Empty translation');
+  } catch (err) {
+    return {
+      success: false,
+      text: text,
+      message: 'Translation unavailable for this text. Original text has been preserved.',
+    };
+  }
 }
 
 /**

@@ -28,14 +28,9 @@ export default function EditorSidebar({
   const [tab, setTab] = useState('Text');
   const [iconCategory, setIconCategory] = useState(ICON_CATEGORIES[0].name);
   const [selectedTargetLang, setSelectedTargetLang] = useState('hi');
-  const [selectedMode, setSelectedMode] = useState(translationMode);
   const uploadRef = useRef(null);
   const bgRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
-
-  useEffect(() => {
-    setSelectedMode(translationMode);
-  }, [translationMode]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -179,7 +174,7 @@ export default function EditorSidebar({
               <label className="editor-lang-label">Invitation Language</label>
               <select
                 value={activeLanguage}
-                onChange={(e) => onTranslateInvitation?.(e.target.value, selectedMode)}
+                onChange={(e) => onTranslateInvitation?.(e.target.value, 'replace')}
                 className="editor-lang-select"
                 disabled={isTranslating}
               >
@@ -207,38 +202,10 @@ export default function EditorSidebar({
               </select>
             </div>
 
-            <div className="editor-lang-group">
-              <label className="editor-lang-label">Translation Mode</label>
-              <div className="editor-lang-modes">
-                <label className="editor-lang-radio">
-                  <input
-                    type="radio"
-                    name="translationMode"
-                    value="replace"
-                    checked={selectedMode === 'replace'}
-                    onChange={() => setSelectedMode('replace')}
-                    disabled={isTranslating}
-                  />
-                  <span>Replace Language</span>
-                </label>
-                <label className="editor-lang-radio">
-                  <input
-                    type="radio"
-                    name="translationMode"
-                    value="bilingual"
-                    checked={selectedMode === 'bilingual'}
-                    onChange={() => setSelectedMode('bilingual')}
-                    disabled={isTranslating}
-                  />
-                  <span>Bilingual</span>
-                </label>
-              </div>
-            </div>
-
             <button
               className="editor-sidebar-item editor-translate-btn"
               disabled={isTranslating}
-              onClick={() => onTranslateInvitation?.(selectedTargetLang, selectedMode)}
+              onClick={() => onTranslateInvitation?.(selectedTargetLang, 'replace')}
             >
               {isTranslating ? 'Translating…' : 'Translate Invitation'}
             </button>
@@ -255,7 +222,7 @@ export default function EditorSidebar({
                 {SUPPORTED_LANGUAGES.map((l) => (
                   <div
                     key={l.id}
-                    className={`editor-lang-chip ${activeLanguage === l.id ? 'active' : ''}`}
+                    className={`editor-lang-chip ${selectedTargetLang === l.id ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedTargetLang(l.id);
                     }}

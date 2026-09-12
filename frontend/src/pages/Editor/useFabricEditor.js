@@ -303,6 +303,16 @@ export function useFabricEditor({ request, onSaved }) {
           if (state.languageState.translationMode) setTranslationMode(state.languageState.translationMode);
         }
         canvas.loadFromJSON(state, () => {
+          // Resize the canvas to match the restored background image,
+          // otherwise a tall card gets clipped at the default 1000px height.
+          const bg = canvas.getObjects().find((o) => o.name === '__background');
+          if (bg) {
+            const realBgHeight = bg.getScaledHeight();
+            canvas.setWidth(CANVAS_W);
+            canvas.setHeight(realBgHeight);
+            bgHeightRef.current = realBgHeight;
+          }
+          canvas.requestRenderAll();
           suppressHistory.current = false;
           finishLoad();
         });
@@ -878,21 +888,13 @@ export function useFabricEditor({ request, onSaved }) {
           const langCfg = LANGUAGE_CONFIG[targetLang];
           const newFont = langCfg?.fontFamily || obj.fontFamily;
 
-          if (mode === 'bilingual') {
-            obj.set({
-              text: `${obj.originalText}\n${targetText}`,
-              activeLanguage: targetLang,
-              translationMode: 'bilingual',
-              fontFamily: newFont,
-            });
-          } else {
-            obj.set({
-              text: targetText,
-              activeLanguage: targetLang,
-              translationMode: 'replace',
-              fontFamily: newFont,
-            });
-          }
+        obj.set({
+            text: targetText,
+            activeLanguage: targetLang,
+            translationMode: 'replace',
+            fontFamily: newFont,
+          });
+          
           fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
           translatedCount++;
         } else {
@@ -969,21 +971,13 @@ export function useFabricEditor({ request, onSaved }) {
         if (targetText) {
           const langCfg = LANGUAGE_CONFIG[targetLang];
           const newFont = langCfg?.fontFamily || obj.fontFamily;
-          if (mode === 'bilingual') {
-            obj.set({
-              text: `${obj.originalText}\n${targetText}`,
-              activeLanguage: targetLang,
-              translationMode: 'bilingual',
-              fontFamily: newFont,
-            });
-          } else {
-            obj.set({
-              text: targetText,
-              activeLanguage: targetLang,
-              translationMode: 'replace',
-              fontFamily: newFont,
-            });
-          }
+          obj.set({
+            text: targetText,
+            activeLanguage: targetLang,
+            translationMode: 'replace',
+            fontFamily: newFont,
+          });
+
           fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
         } else {
           setSelectedTranslationMessage('Translation unavailable for this text. Original text has been preserved.');

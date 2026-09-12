@@ -4,7 +4,9 @@ import uuid
 import requests
 import urllib.parse
 import bcrypt
-from typing import Optional
+from typing import Optional, List
+import time
+from deep_translator import GoogleTranslator
 
 from PIL import Image, ImageDraw, ImageFont
 from fastapi import FastAPI, Depends, HTTPException, Header, File, UploadFile
@@ -158,6 +160,50 @@ def submit_rsvp(body: RSVPIn):
     result = supabase.table("rsvp").insert(body.dict()).execute()
     return {"success": True, "rsvp": result.data[0]}
 
+from deep_translator import GoogleTranslator
+
+class TranslateIn(BaseModel):
+    texts: List[str]
+    source_lang: Optional[str] = "en"
+    target_lang: str
+
+
+# in-memory cache: survives until you restart the server
+_translation_cache = {}
+
+class TranslateIn(BaseModel):
+    texts: List[str]
+    source_lang: Optional[str] = "en"
+    target_lang: str
+
+def _translate_one(text, source, target, retries=4):
+    key = (text, source, target)
+    if key in _translation_cache:
+        return _translation_cache[key]
+
+    for attempt in range(retries):
+        try:
+            result = GoogleTranslator(source=source, target=target).translate(text)
+            if result and result.strip():
+                _translation_cache[key] = result
+                return result
+        except Exception:
+            pass
+        time.sleep(0.7 * (attempt + 1))   # back off a bit more each retry
+
+    # every attempt failed → keep the original so nothing breaks
+    return text
+
+@app.post("/translate")
+def translate(body: TranslateIn):
+    if body.target_lang == body.source_lang:
+        return {"translations": body.texts}
+    results = []
+    for t in body.texts:
+        results.append(t if not t or not t.strip()
+                       else _translate_one(t, body.source_lang, body.target_lang))
+    return {"translations": results}
+    
 
 @app.post("/saveInvitation")
 def save_invitation(body: InvitationIn, user=Depends(get_current_user)):

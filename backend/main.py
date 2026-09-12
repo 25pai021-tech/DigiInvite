@@ -194,16 +194,50 @@ def _translate_one(text, source, target, retries=4):
     # every attempt failed → keep the original so nothing breaks
     return text
 
+def _translate_batch(texts, source, target):
+    results = list(texts)
+    pending, pending_idx = [], []
+
+    for i, t in enumerate(texts):
+        if not t or not t.strip():
+            continue
+        key = (t, source, target)
+        if key in _translation_cache:
+            results[i] = _translation_cache[key]
+        else:
+            pending.append(t)
+            pending_idx.append(i)
+
+    if not pending:
+        return results
+
+    # One combined call — newline-joined so it's a single request to Google
+    SEP = "\n"
+    try:
+        out = GoogleTranslator(source=source, target=target).translate(SEP.join(pending))
+        parts = out.split(SEP) if out else []
+        if len(parts) == len(pending):
+            for j, i in enumerate(pending_idx):
+                val = parts[j].strip() or texts[i]
+                results[i] = val
+                _translation_cache[(texts[i], source, target)] = val
+            return results
+    except Exception:
+        pass
+
+    # Fallback: per-item (with retries) if the combined split didn't match
+    for j, i in enumerate(pending_idx):
+        results[i] = _translate_one(texts[i], source, target)
+    return results
+
+
 @app.post("/translate")
 def translate(body: TranslateIn):
     if body.target_lang == body.source_lang:
         return {"translations": body.texts}
-    results = []
-    for t in body.texts:
-        results.append(t if not t or not t.strip()
-                       else _translate_one(t, body.source_lang, body.target_lang))
-    return {"translations": results}
-    
+    return {"translations": _translate_batch(body.texts, body.source_lang, body.target_lang)}
+
+
 
 @app.post("/saveInvitation")
 def save_invitation(body: InvitationIn, user=Depends(get_current_user)):

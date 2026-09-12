@@ -5,6 +5,7 @@ import {
   SUPPORTED_LANGUAGES,
   LANGUAGE_CONFIG,
   translateText,
+  translateBatch,
   isDynamicField,
   fitTranslatedText,
 } from './languageService';
@@ -825,25 +826,20 @@ export function useFabricEditor({ request, onSaved }) {
   }, [undo, redo, duplicateActive, deleteActive]);
 
   // ── translation actions ──────────────────────────────────────
-  const translateInvitation = useCallback(async (targetLang, mode = 'replace') => {
+   const translateInvitation = useCallback(async (targetLang, mode = 'replace') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     setIsTranslating(true);
     setTranslationMessage('');
-    // Realistic async delay for loading state
-    await new Promise((resolve) => setTimeout(resolve, 350));
 
     try {
       const textObjects = canvas.getObjects().filter(
         (o) => (o.type === 'i-text' || o.type === 'textbox' || o.type === 'text') && o.name !== '__background'
       );
 
-      let translatedCount = 0;
-      let unavailableCount = 0;
-
+      // Ensure metadata on every text object
       for (const obj of textObjects) {
-        // Ensure initial metadata
         if (!obj.originalText) {
           obj.originalText = obj.text || '';
           obj.translations = { en: obj.originalText };
@@ -854,14 +850,15 @@ export function useFabricEditor({ request, onSaved }) {
           obj.originalFontSize = obj.fontSize;
           obj.isTranslatable = !isDynamicField(obj.originalText, obj.name, obj.fieldType);
         }
+      }
 
-        // Skip dynamic/protected fields
-        if (isDynamicField(obj.originalText, obj.name, obj.fieldType)) {
-          continue;
-        }
+      let translatedCount = 0;
+      let unavailableCount = 0;
 
-        // Switching back to English
-        if (targetLang === 'en') {
+      if (targetLang === 'en') {
+        // Restore originals
+        for (const obj of textObjects) {
+          if (isDynamicField(obj.originalText, obj.name, obj.fieldType)) continue;
           obj.set({
             text: obj.originalText,
             fontFamily: obj.originalFontFamily || 'Inter',
@@ -871,34 +868,42 @@ export function useFabricEditor({ request, onSaved }) {
           });
           fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
           translatedCount++;
-          continue;
         }
+      } else {
+        // Collect every translatable layer that isn't already cached
+        const targets = textObjects.filter(
+          (o) => !isDynamicField(o.originalText, o.name, o.fieldType)
+        );
+        const uncached = targets.filter((o) => !o.translations?.[targetLang]);
 
-        // Check if translation is already cached
-        let targetText = obj.translations?.[targetLang];
-        if (!targetText) {
-          const res = await translateText(obj.originalText, obj.sourceLanguage || 'en', targetLang);
-          if (res.success && res.text) {
-            targetText = res.text;
-            obj.translations = { ...(obj.translations || {}), [targetLang]: targetText };
-          }
-        }
-
-        if (targetText) {
-          const langCfg = LANGUAGE_CONFIG[targetLang];
-          const newFont = langCfg?.fontFamily || obj.fontFamily;
-
-        obj.set({
-            text: targetText,
-            activeLanguage: targetLang,
-            translationMode: 'replace',
-            fontFamily: newFont,
+        // ONE batched request for the whole card
+        if (uncached.length) {
+          const results = await translateBatch(
+            uncached.map((o) => o.originalText), 'en', targetLang
+          );
+          uncached.forEach((o, i) => {
+            if (results[i]) {
+              o.translations = { ...(o.translations || {}), [targetLang]: results[i] };
+            }
           });
-          
-          fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
-          translatedCount++;
-        } else {
-          unavailableCount++;
+        }
+
+        // Apply
+        const langCfg = LANGUAGE_CONFIG[targetLang];
+        for (const obj of targets) {
+          const targetText = obj.translations?.[targetLang];
+          if (targetText) {
+            obj.set({
+              text: targetText,
+              activeLanguage: targetLang,
+              translationMode: 'replace',
+              fontFamily: langCfg?.fontFamily || obj.fontFamily,
+            });
+            fitTranslatedText(obj, CANVAS_W, bgHeightRef.current);
+            translatedCount++;
+          } else {
+            unavailableCount++;
+          }
         }
       }
 
@@ -914,7 +919,7 @@ export function useFabricEditor({ request, onSaved }) {
       setTranslationMode(mode);
 
       if (unavailableCount > 0 && translatedCount === 0) {
-        setTranslationMessage('Translation unavailable for this text. Original text has been preserved.');
+        setTranslationMessage('Translation unavailable. Original text has been preserved.');
       } else if (unavailableCount > 0) {
         setTranslationMessage(`Translated with ${unavailableCount} phrase(s) preserved in original.`);
       } else {
@@ -927,6 +932,7 @@ export function useFabricEditor({ request, onSaved }) {
       setIsTranslating(false);
     }
   }, []);
+
 
   const translateSelectedText = useCallback(async (targetLang, mode = 'replace') => {
     const canvas = canvasRef.current;

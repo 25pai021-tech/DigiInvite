@@ -393,6 +393,46 @@ export async function translateText(text, sourceLanguage = 'en', targetLanguage 
   }
 }
 
+export async function translateBatch(texts, sourceLanguage = 'en', targetLanguage = 'hi') {
+  if (!Array.isArray(texts) || texts.length === 0) return [];
+  if (targetLanguage === sourceLanguage || targetLanguage === 'en') return texts.slice();
+
+  const results = new Array(texts.length).fill(null);
+  const misses = [];
+  const missIdx = [];
+
+  texts.forEach((text, i) => {
+    if (!text || typeof text !== 'string') { results[i] = text; return; }
+    const key = normalizeKey(text);
+    const entry = MOCK_TRANSLATIONS[key];
+    if (entry && entry[targetLanguage]) { results[i] = entry[targetLanguage]; return; }
+    misses.push(text);
+    missIdx.push(i);
+  });
+
+  if (misses.length) {
+    try {
+      const res = await fetch(`${API_URL}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts: misses, source_lang: sourceLanguage || 'en', target_lang: targetLanguage }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const arr = data?.translations || [];
+      missIdx.forEach((idx, j) => {
+        const t = arr[j];
+        results[idx] = (t && t.trim()) ? t : null;
+      });
+    } catch {
+      missIdx.forEach((idx) => { results[idx] = null; });
+    }
+  }
+
+  return results;
+}
+
+
 /**
  * Automatically fits translated text within design boundaries.
  * Prevents text overflow and clipping without breaking visual layout.

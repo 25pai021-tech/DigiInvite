@@ -332,51 +332,9 @@ function normalizeKey(str) {
  * URLs, email addresses, RSVP links, and standalone person names.
  */
 export function isDynamicField(text, objectName = '', fieldType = '') {
+  // Translate everything on the card — no field is treated as protected.
+  // Only genuinely empty/invalid text is skipped.
   if (!text || typeof text !== 'string') return true;
-  const trimmed = text.trim();
-  const lowerName = (objectName || '').toLowerCase();
-  const lowerField = (fieldType || '').toLowerCase();
-
-  // Explicit dynamic field types or layer names
-  const protectedNames = ['date', 'time', 'venue', 'phone', 'url', 'email', 'rsvp', 'link', 'qrcode', 'name'];
-  if (protectedNames.includes(lowerName) || protectedNames.includes(lowerField)) {
-    return true;
-  }
-
-  // Pure digits or bullet separator lines (e.g. "18-12-2026 • 18:00")
-  if (/^[\d\s•\-:./\w]+$/.test(trimmed) && /\d/.test(trimmed) && (trimmed.includes('•') || trimmed.includes(':') || trimmed.includes('-'))) {
-    return true;
-  }
-
-  // Date formats: 01 September 2026, 18/12/2026, 2026-09-01, Saturday, Dec 18
-  const dateRegex = /\b(\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b/i;
-  if (dateRegex.test(trimmed)) return true;
-
-  // Time formats: 5:00 PM, 18:00, 6:30am
-  const timeRegex = /\b(\d{1,2}:\d{2}(\s*(AM|PM|am|pm))?)\b/;
-  if (timeRegex.test(trimmed)) return true;
-
-  // Phone numbers: +91 XXXXX XXXXX, (123) 456-7890
-  const phoneRegex = /(\+?\d{1,3}[\s-]?)?\(?\d{3,5}\)?[\s-]?\d{3,5}[\s-]?\d{3,5}/;
-  if (phoneRegex.test(trimmed) && trimmed.replace(/\D/g, '').length >= 7) return true;
-
-  // URLs & Domains: example.com, https://...
-  const urlRegex = /(https?:\/\/|www\.|\b[a-zA-Z0-9.-]+\.(com|org|in|net|co|io|me|app)\b)/i;
-  if (urlRegex.test(trimmed)) return true;
-
-  // Email addresses
-  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
-  if (emailRegex.test(trimmed)) return true;
-
-  // Standalone single name (e.g. "Olivia", "Aarav", "Riya") without common phrase words
-  const words = trimmed.split(/\s+/);
-  if (words.length === 1 && /^[A-Z][a-z]+$/.test(trimmed)) {
-    // Only protect if it's not a dictionary word like "Welcome" or "Celebration"
-    if (!MOCK_TRANSLATIONS[normalizeKey(trimmed)]) {
-      return true;
-    }
-  }
-
   return false;
 }
 

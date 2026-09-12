@@ -856,7 +856,7 @@ export function useFabricEditor({ request, onSaved }) {
         }
 
         // Skip dynamic/protected fields
-        if (obj.isTranslatable === false || isDynamicField(obj.originalText, obj.name, obj.fieldType)) {
+        if (isDynamicField(obj.originalText, obj.name, obj.fieldType)) {
           continue;
         }
 

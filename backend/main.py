@@ -1,4 +1,5 @@
 import os
+import json
 import io
 import uuid
 import requests
@@ -7,6 +8,9 @@ import bcrypt
 from typing import Optional, List
 import time
 from deep_translator import GoogleTranslator
+import razorpay
+import hmac
+import hashlib
 
 from PIL import Image, ImageDraw, ImageFont
 from fastapi import FastAPI, Depends, HTTPException, Header, File, UploadFile
@@ -21,6 +25,7 @@ FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
 
 
 # ===================== TEXT DRAWING HELPER =====================
+# (currently unused — kept for future "burn text onto card" feature)
 
 def draw_details_on_card(image, row):
     """Draws the user's details onto the card, wrapping long lines and keeping a margin."""
@@ -106,6 +111,13 @@ app.add_middleware(
 )
 
 
+# ===================== RAZORPAY SETUP =====================
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+
 @app.get("/")
 def home():
     return {"message": "DigiInvite backend is running"}
@@ -145,6 +157,24 @@ class RSVPIn(BaseModel):
     message: Optional[str] = None
 
 
+class CreateOrderIn(BaseModel):
+    request_id: str
+    amount: int          # rupees, e.g. 499
+
+
+class VerifyPaymentIn(BaseModel):
+    request_id: str
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
+
+class TranslateIn(BaseModel):
+    texts: List[str]
+    source_lang: Optional[str] = "en"
+    target_lang: str
+
+
 # ===================== CORE ENDPOINTS =====================
 
 @app.get("/templates")
@@ -160,23 +190,74 @@ def submit_rsvp(body: RSVPIn):
     result = supabase.table("rsvp").insert(body.dict()).execute()
     return {"success": True, "rsvp": result.data[0]}
 
-from deep_translator import GoogleTranslator
 
-class TranslateIn(BaseModel):
-    texts: List[str]
-    source_lang: Optional[str] = "en"
-    target_lang: str
+# ===================== PAYMENTS =====================
 
+@app.post("/createOrder")
+def create_order(body: CreateOrderIn, user=Depends(get_current_user)):
+    # Make sure this request belongs to the logged-in user
+    req = (
+        supabase.table("invitation_requests")
+        .select("id, user_id")
+        .eq("id", body.request_id)
+        .limit(1)
+        .execute()
+    )
+    if not req.data or req.data[0]["user_id"] != user.id:
+        raise HTTPException(404, "Request not found")
+
+    # Razorpay works in paise, so multiply rupees by 100
+    order = razorpay_client.order.create({
+        "amount": body.amount * 100,
+        "currency": "INR",
+        "receipt": body.request_id,
+        "notes": {"request_id": body.request_id},
+    })
+
+    # Send what the frontend popup needs
+    return {
+        "order_id": order["id"],
+        "amount": order["amount"],
+        "currency": order["currency"],
+        "key_id": RAZORPAY_KEY_ID,
+    }
+
+
+@app.post("/verifyPayment")
+def verify_payment(body: VerifyPaymentIn, user=Depends(get_current_user)):
+    # 1) Verify the signature — this proves the payment is real and untampered.
+    #    Razorpay signs (order_id + "|" + payment_id) with your secret key.
+    expected = hmac.new(
+        RAZORPAY_KEY_SECRET.encode(),
+        f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, body.razorpay_signature):
+        raise HTTPException(400, "Payment verification failed")
+
+    # 2) Signature is valid → mark THIS user's request as Paid
+    result = (
+        supabase.table("invitation_requests")
+        .update({"status": "Paid"})
+        .eq("id", body.request_id)
+        .eq("user_id", user.id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(404, "Request not found")
+
+    return {"success": True, "status": "Paid", "request": result.data[0]}
+
+
+# ===================== TRANSLATION =====================
 
 # in-memory cache: survives until you restart the server
 _translation_cache = {}
 
-class TranslateIn(BaseModel):
-    texts: List[str]
-    source_lang: Optional[str] = "en"
-    target_lang: str
 
 def _translate_one(text, source, target, retries=4):
+    """Fallback: translate a single string with Google, retrying on rate limits."""
     key = (text, source, target)
     if key in _translation_cache:
         return _translation_cache[key]
@@ -185,14 +266,80 @@ def _translate_one(text, source, target, retries=4):
         try:
             result = GoogleTranslator(source=source, target=target).translate(text)
             if result and result.strip():
-                _translation_cache[key] = result
+                _translation_cache[(texts[i], source, target)] = val
                 return result
         except Exception:
             pass
-        time.sleep(0.7 * (attempt + 1))   # back off a bit more each retry
+        if attempt < retries - 1:
+            time.sleep(0.7 * (attempt + 1))   # back off a bit more each retry
 
     # every attempt failed → keep the original so nothing breaks
     return text
+
+
+# ---------- LLM (context-aware) translation via Groq ----------
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
+_LANG_NAMES = {
+    "hi": "Hindi", "gu": "Gujarati", "ml": "Malayalam", "ta": "Tamil",
+    "te": "Telugu", "mr": "Marathi", "bn": "Bengali", "pa": "Punjabi",
+    "kn": "Kannada", "en": "English",
+}
+
+
+def _llm_translate(texts, target):
+    """Translate a whole card together, with context. Returns an aligned list, or None on failure."""
+    if not GROQ_API_KEY:
+        print("[translate] No GROQ_API_KEY set → falling back to Google")
+        return None
+    lang = _LANG_NAMES.get(target, target)
+    numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
+    prompt = (
+        f"These are text lines from a digital event invitation card. "
+        f"Rewrite every line fully in {lang} script as it would naturally appear on an invitation. "
+        f"Translate the MEANING of every ordinary word into its real {lang} word — for example "
+        f"'City' becomes the {lang} word for city, 'Street' becomes the {lang} word for street, "
+        f"'Birthday' becomes the {lang} word for birthday. Do not spell English words phonetically "
+        f"when a real {lang} word exists. "
+        f"Also translate the phrase 'request your company' as requesting someone's presence, not a business. "
+        f"Keep UNCHANGED only: digits and numbers, phone numbers, email addresses, website links, "
+        f"and the acronym 'RSVP'. Translate EVERY other word by its dictionary meaning into {lang} — "
+        f"including placeholder words used as names (translate 'Anywhere' to the {lang} word meaning "
+        f"'anywhere', 'Any' to the word for 'any'). Never spell an English word phonetically if it "
+        f"has a real {lang} meaning. "
+        f"ALWAYS write people's names in {lang} script by transliterating their sound "
+        f"(for example write 'Olivia' and 'Alexander' in {lang} letters). Never leave a name in "
+        f"English/Latin letters. "
+        f'Return ONLY a JSON object like {{"translations": [...]}} with exactly one translated '
+        f"string per input line, in the same order.\n\nLines:\n{numbered}"
+    )
+    try:
+        resp = requests.post(
+            GROQ_URL,
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            print(f"[translate] Groq error {resp.status_code}: {resp.text[:300]}")
+            return None
+        content = resp.json()["choices"][0]["message"]["content"]
+        arr = json.loads(content).get("translations")
+        if isinstance(arr, list) and len(arr) == len(texts):
+            print(f"[translate] ✅ LLM translated {len(arr)} lines to {lang}")
+            return [str(x) for x in arr]
+        print(f"[translate] LLM returned unexpected shape: {content[:200]}")
+    except Exception as e:
+        print(f"[translate] Groq call failed: {e}")
+    return None
 
 def _translate_batch(texts, source, target):
     results = list(texts)
@@ -211,7 +358,16 @@ def _translate_batch(texts, source, target):
     if not pending:
         return results
 
-    # One combined call — newline-joined so it's a single request to Google
+    # 1) Context-aware LLM translation for the whole card
+    llm = _llm_translate(pending, target)
+    if llm:
+        for j, i in enumerate(pending_idx):
+            val = (llm[j] or "").strip() or texts[i]
+            results[i] = val
+            _translation_cache[(texts[i], source, target)] = val
+        return results
+
+    # 2) Fallback: Google in one combined call
     SEP = "\n"
     try:
         out = GoogleTranslator(source=source, target=target).translate(SEP.join(pending))
@@ -225,7 +381,7 @@ def _translate_batch(texts, source, target):
     except Exception:
         pass
 
-    # Fallback: per-item (with retries) if the combined split didn't match
+    # 3) Last resort: Google per-item with retries
     for j, i in enumerate(pending_idx):
         results[i] = _translate_one(texts[i], source, target)
     return results
@@ -238,6 +394,7 @@ def translate(body: TranslateIn):
     return {"translations": _translate_batch(body.texts, body.source_lang, body.target_lang)}
 
 
+# ===================== INVITATIONS / UPLOADS =====================
 
 @app.post("/saveInvitation")
 def save_invitation(body: InvitationIn, user=Depends(get_current_user)):
@@ -405,7 +562,7 @@ def build_prompt(r, template=None):
             parts.append(f"{template['religion']} cultural motifs")
         if template.get("region"):
             parts.append(f"{template['region']} regional aesthetic")
-    
+
     if r.get("instructions"):
         parts.append(str(r["instructions"]))
 
@@ -449,7 +606,7 @@ def generate_card(body: GenerateCardIn):
         resp = requests.get(pollinations_url, timeout=120)
         resp.raise_for_status()
         image = Image.open(io.BytesIO(resp.content))
-        # image = draw_details_on_card(image, row)  # keep this commented 
+        # image = draw_details_on_card(image, row)  # keep this commented
     except Exception as e:
         raise HTTPException(502, f"Image generation failed: {e}")
 

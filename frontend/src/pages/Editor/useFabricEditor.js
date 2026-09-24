@@ -874,7 +874,7 @@ export function useFabricEditor({ request, onSaved }) {
         const targets = textObjects.filter(
           (o) => !isDynamicField(o.originalText, o.name, o.fieldType)
         );
-        const uncached = targets.filter((o) => !o.translations?.[targetLang]);
+        const uncached = targets;   // always re-send the whole card so the LLM has full context
 
         // ONE batched request for the whole card
         if (uncached.length) {

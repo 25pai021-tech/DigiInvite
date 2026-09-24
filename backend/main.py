@@ -438,6 +438,9 @@ def build_prompt(r, template=None):
     if r.get("instructions"):
         parts.append(str(r["instructions"]))
 
+    if r.get("couple_photo_url"):
+        parts.append("with an elegant central framing area designed to showcase a couple portrait")
+
     parts.append("decorated frame around a large empty blank centre, no text, no words, no letters, high resolution, portrait")
     return ", ".join(p for p in parts if p)
 

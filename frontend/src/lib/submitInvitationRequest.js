@@ -7,11 +7,24 @@ const BUCKET = 'design-uploads';
  * and returns its public URL.
  */
 async function uploadFile(file, userId, folder) {
-  const path = `${userId}/${folder}/${Date.now()}-${file.name}`;
-  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file);
-  if (uploadError) throw uploadError;
+  if (!file) return null;
+  const safeName = (file.name || 'image.png').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${userId}/${folder}/${Date.now()}-${safeName}`;
+  const contentType = file.type || 'image/jpeg';
+
+  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
+    contentType,
+    upsert: false,
+  });
+  if (uploadError) {
+    console.error('Storage upload failed:', uploadError);
+    throw new Error(`Upload failed for ${file.name}: ${uploadError.message || 'Storage error'}`);
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  if (!data?.publicUrl) {
+    throw new Error(`Failed to retrieve public URL for ${file.name}`);
+  }
   return data.publicUrl;
 }
 
@@ -30,13 +43,25 @@ export async function submitInvitationRequest({ eventType, details, design, temp
     throw new Error('You must be signed in to submit a request.');
   }
 
-  const couplePhotoUrl = design.couplePhoto?.[0]
-    ? await uploadFile(design.couplePhoto[0], user.id, 'couple-photo')
-    : null;
+  let couplePhotoUrl = null;
+  if (design.couplePhoto?.[0]) {
+    try {
+      couplePhotoUrl = await uploadFile(design.couplePhoto[0], user.id, 'couple-photo');
+    } catch (err) {
+      throw new Error(`Failed to upload couple photo: ${err.message}`);
+    }
+  }
 
-  const referenceImageUrls = design.referenceImages?.length
-    ? await Promise.all(design.referenceImages.map((file) => uploadFile(file, user.id, 'references')))
-    : [];
+  let referenceImageUrls = [];
+  if (design.referenceImages?.length) {
+    try {
+      referenceImageUrls = await Promise.all(
+        design.referenceImages.map((file) => uploadFile(file, user.id, 'references'))
+      );
+    } catch (err) {
+      throw new Error(`Failed to upload reference images: ${err.message}`);
+    }
+  }
 
   const { data, error } = await supabase
     .from('invitation_requests')

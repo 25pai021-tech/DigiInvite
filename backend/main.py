@@ -352,6 +352,15 @@ def _norm(value):
 
 def find_matching_template(row):
     """Find one of Tanvi's templates that fits this request, ignoring capitalisation."""
+    if row.get("template_id"):
+        res = (
+            supabase.table("templates").select("*")
+            .eq("id", row["template_id"])
+            .eq("is_active", True).limit(1).execute()
+        )
+        if res.data:
+            return res.data[0]
+
     event_type = (row.get("event_type") or "").strip().replace("-", " ")
     theme = (row.get("theme") or "").strip()
     if not event_type:
@@ -368,6 +377,12 @@ def find_matching_template(row):
         if res.data:
             return res.data[0]
 
+    # If the user specified a custom theme, do not fall back to an arbitrary
+    # template that would inject conflicting cultural/religious motifs.
+    norm_theme = _norm(theme)
+    if norm_theme and norm_theme not in THEME_STYLES and norm_theme != "custom":
+        return None
+
     # fallback: any template of the same event type
     res = (
         supabase.table("templates").select("*")
@@ -378,18 +393,32 @@ def find_matching_template(row):
 
 
 def build_prompt(r, template=None):
-    theme = _norm(r.get("theme"))
+    raw_theme = (r.get("theme") or "").strip()
+    theme = _norm(raw_theme)
     event = _norm(r.get("event_type"))
 
     event_words = event.replace("-", " ") or "celebration"
     theme_words = theme or "elegant"
 
-    parts = [f"A {theme_words} {event_words} invitation card background"]
+    is_custom_theme = bool(theme and theme not in THEME_STYLES and theme != "custom")
 
-    if event in EVENT_STYLES:
-        parts.append(EVENT_STYLES[event])
-    if theme in THEME_STYLES:
-        parts.append(THEME_STYLES[theme])
+    if is_custom_theme:
+        parts = [
+            f"A magnificent {raw_theme} themed {event_words} invitation card background",
+            f"distinctive {raw_theme} theme styling with authentic {raw_theme} motifs, visual elements, textures and atmosphere",
+            f"creative immersion in {raw_theme} aesthetic",
+        ]
+        if event == "wedding":
+            parts.append("romantic wedding invitation, intertwined wedding rings, elegant celebration mood")
+        elif event in EVENT_STYLES:
+            parts.append(EVENT_STYLES[event])
+    else:
+        parts = [f"A {theme_words} {event_words} invitation card background"]
+        if event in EVENT_STYLES:
+            parts.append(EVENT_STYLES[event])
+        if theme in THEME_STYLES:
+            parts.append(THEME_STYLES[theme])
+
     if r.get("color"):
         parts.append(f"in a {r['color']} colour palette")
     if template:

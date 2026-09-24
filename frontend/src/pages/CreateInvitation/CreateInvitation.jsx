@@ -31,6 +31,7 @@ const EMPTY_DETAILS = {
 
 const EMPTY_DESIGN = {
   theme: '',
+  customTheme: '',
   color: '',
   couplePhoto: [],
   referenceImages: [],
@@ -48,7 +49,8 @@ export default function CreateInvitation() {
 
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [detailErrors, setDetailErrors] = useState({});
-  const [design, setDesign] = useState({EMPTY_DESIGN, theme: pickedTemplate?.theme || '', });
+  const [design, setDesign] = useState({ ...EMPTY_DESIGN, theme: pickedTemplate?.theme || '' });
+  const [designErrors, setDesignErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [requestId, setRequestId] = useState(null);
@@ -62,6 +64,12 @@ export default function CreateInvitation() {
 
   const updateDesign = (field, value) => {
     setDesign((prev) => ({ ...prev, [field]: value }));
+    if (designErrors[field]) {
+      setDesignErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    if (field === 'theme' && value !== 'custom' && designErrors.customTheme) {
+      setDesignErrors((prev) => ({ ...prev, customTheme: undefined }));
+    }
   };
 
   const updateDesignFiles = (field, files) => {
@@ -76,6 +84,12 @@ export default function CreateInvitation() {
   const canProceed = () => {
     if (step === 0) return Boolean(eventType);
     if (step === 1) return true; // validated explicitly on Next
+    if (step === 2) {
+      if (design.theme === 'custom' && !design.customTheme?.trim()) {
+        return false;
+      }
+      return true;
+    }
     return true;
   };
 
@@ -84,6 +98,12 @@ export default function CreateInvitation() {
       const errors = validateEventDetails(details);
       if (Object.keys(errors).length > 0) {
         setDetailErrors(errors);
+        return;
+      }
+    }
+    if (step === 2) {
+      if (design.theme === 'custom' && (!design.customTheme || !design.customTheme.trim())) {
+        setDesignErrors({ customTheme: 'Please enter a custom theme.' });
         return;
       }
     }
@@ -148,7 +168,12 @@ export default function CreateInvitation() {
           )}
 
           {step === 2 && (
-            <DesignPreferences data={design} onChange={updateDesign} onFilesChange={updateDesignFiles} />
+            <DesignPreferences
+              data={design}
+              errors={designErrors}
+              onChange={updateDesign}
+              onFilesChange={updateDesignFiles}
+            />
           )}
 
           {step === 3 && (

@@ -64,7 +64,14 @@ export default function ReviewSubmit({ eventType, details, design, onEditStep, o
       <Row label="Special Message" value={details.specialMessage} />
 
       <SectionTitle onEdit={() => onEditStep(2)}>Design Preferences</SectionTitle>
-      <Row label="Theme" value={design.theme} />
+      <Row
+        label="Theme"
+        value={
+          design.theme === 'custom'
+            ? (design.customTheme ? `Custom (${design.customTheme})` : 'Custom')
+            : (design.theme ? (design.theme.charAt(0).toUpperCase() + design.theme.slice(1)) : '')
+        }
+      />
       <Row label="Preferred Colors" value={design.color} />
       <Row label="Special Instructions" value={design.instructions} />
       <Row label="Additional Notes" value={design.additionalNotes} />

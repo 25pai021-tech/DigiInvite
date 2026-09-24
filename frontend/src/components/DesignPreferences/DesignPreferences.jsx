@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import { Input, Textarea } from '../Shared/Input';
 
+const PRESET_KEYS = ['royal', 'floral', 'luxury', 'modern', 'traditional', 'minimal'];
+
 const THEMES = [
   { key: 'royal', label: 'Royal' },
   { key: 'floral', label: 'Floral' },
@@ -8,11 +10,14 @@ const THEMES = [
   { key: 'modern', label: 'Modern' },
   { key: 'traditional', label: 'Traditional' },
   { key: 'minimal', label: 'Minimal' },
+  { key: 'custom', label: 'Custom' },
 ];
 
-export default function DesignPreferences({ data, onChange, onFilesChange }) {
+export default function DesignPreferences({ data, errors = {}, onChange, onFilesChange }) {
   const coupleInputRef = useRef(null);
   const referenceInputRef = useRef(null);
+
+  const isCustom = data.theme === 'custom' || (Boolean(data.theme) && !PRESET_KEYS.includes(data.theme));
 
   const set = (field) => (e) => onChange(field, e.target.value);
 
@@ -46,7 +51,7 @@ export default function DesignPreferences({ data, onChange, onFilesChange }) {
         <label className="di-label">Choose Theme</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
           {THEMES.map((theme) => {
-            const selected = data.theme === theme.key;
+            const selected = theme.key === 'custom' ? isCustom : data.theme === theme.key;
             return (
               <label
                 key={theme.key}
@@ -75,6 +80,19 @@ export default function DesignPreferences({ data, onChange, onFilesChange }) {
             );
           })}
         </div>
+
+        {isCustom && (
+          <div style={{ marginTop: 14 }}>
+            <Input
+              label="Custom Theme"
+              required
+              placeholder="e.g. Space, Beach, Vintage, Galaxy"
+              value={data.customTheme || ''}
+              onChange={(e) => onChange('customTheme', e.target.value)}
+              error={errors?.customTheme}
+            />
+          </div>
+        )}
       </div>
 
       <Input

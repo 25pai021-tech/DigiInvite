@@ -57,7 +57,7 @@ export async function submitInvitationRequest({ eventType, details, design, temp
         email: details.email,
         map_link: details.mapLink || null,
         special_message: details.specialMessage || null,
-        theme: design.theme || null,
+        theme: design.theme === 'custom' ? (design.customTheme?.trim() || 'Custom') : (design.theme || null),
         color: design.color || null,
         instructions: design.instructions || null,
         additional_notes: design.additionalNotes || null,

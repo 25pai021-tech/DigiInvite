@@ -198,11 +198,75 @@ function ensureId(obj) {
 }
 
 function readableName(obj) {
-  if (obj.name && obj.name !== '__background') return obj.name;
+  if (obj.name && obj.name !== '__background') {
+    if (obj.name === 'couple_photo') return 'Couple Photo';
+    return obj.name;
+  }
   if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') return (obj.text || 'Text').slice(0, 24);
   if (obj.type === 'image') return 'Image';
   if (obj.type === 'group') return 'Group';
   return obj.type ? obj.type[0].toUpperCase() + obj.type.slice(1) : 'Object';
+}
+
+function addUploadedPhoto(canvas, photoUrl, bgHeight = CANVAS_H, callback) {
+  if (!photoUrl || typeof photoUrl !== 'string' || !photoUrl.trim()) {
+    if (callback) callback();
+    return;
+  }
+
+  let cleanUrl = photoUrl.trim();
+  // Handle storage paths that aren't complete URLs
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://') && !cleanUrl.startsWith('data:')) {
+    try {
+      const { data } = supabase.storage.from(PREVIEW_BUCKET).getPublicUrl(cleanUrl);
+      if (data?.publicUrl) cleanUrl = data.publicUrl;
+    } catch {
+      // Fallback to cleanUrl
+    }
+  }
+
+  const imgEl = new Image();
+  imgEl.crossOrigin = 'anonymous';
+
+  imgEl.onload = () => {
+    try {
+      const fabricImg = new fabric.Image(imgEl);
+      const maxDim = 220;
+      const naturalWidth = fabricImg.width || maxDim;
+      const naturalHeight = fabricImg.height || maxDim;
+      const scale = Math.min(maxDim / naturalWidth, maxDim / naturalHeight, 1);
+      const topPos = Math.max(120, Math.round(bgHeight * 0.22));
+
+      fabricImg.set({
+        left: CANVAS_W / 2,
+        top: topPos,
+        originX: 'center',
+        originY: 'center',
+        scaleX: scale,
+        scaleY: scale,
+        cornerColor: '#8B5CF6',
+        cornerStyle: 'circle',
+        borderColor: '#8B5CF6',
+        transparentCorners: false,
+        name: 'couple_photo',
+        __uid: `photo_${Date.now()}`,
+      });
+
+      canvas.add(fabricImg);
+      canvas.bringToFront(fabricImg);
+    } catch (e) {
+      console.warn('Failed to add couple photo to canvas:', e);
+    } finally {
+      if (callback) callback();
+    }
+  };
+
+  imgEl.onerror = (err) => {
+    console.warn('Could not load couple photo from URL:', cleanUrl, err);
+    if (callback) callback();
+  };
+
+  imgEl.src = cleanUrl;
 }
 
 export function useFabricEditor({ request, onSaved }) {
@@ -262,7 +326,14 @@ export function useFabricEditor({ request, onSaved }) {
         ? buildObjectsFromLayout(layout, request, bgHeight)
         : buildDefaultObjects(request);
       objects.forEach((obj) => canvas.add(obj));
-      finishLoad();
+
+      if (request.couple_photo_url) {
+        addUploadedPhoto(canvas, request.couple_photo_url, bgHeight, () => {
+          finishLoad();
+        });
+      } else {
+        finishLoad();
+      }
     };
 
         const setupWithBackground = () => {
@@ -313,6 +384,18 @@ export function useFabricEditor({ request, onSaved }) {
             canvas.setHeight(realBgHeight);
             bgHeightRef.current = realBgHeight;
           }
+
+          // If the request has an uploaded photo that was not yet part of this saved state, add it
+          const hasPhoto = canvas.getObjects().some((o) => o.name === 'couple_photo' || (o.type === 'image' && o.name !== '__background'));
+          if (!hasPhoto && request.couple_photo_url) {
+            addUploadedPhoto(canvas, request.couple_photo_url, bgHeightRef.current, () => {
+              canvas.requestRenderAll();
+              suppressHistory.current = false;
+              finishLoad();
+            });
+            return;
+          }
+
           canvas.requestRenderAll();
           suppressHistory.current = false;
           finishLoad();

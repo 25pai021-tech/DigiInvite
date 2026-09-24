@@ -52,11 +52,16 @@ function initTextObjectMetadata(obj, fieldType = 'custom') {
  * generated request (used the first time someone opens the editor, before
  * any editor_state has been saved).
  */
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-').map(Number);
   if (!y || !m || !d) return dateStr;
-  return `${d}-${m}-${y}`;
+  return `${d} ${MONTHS[m - 1]} ${y}`;   // e.g. "1 January 1980"
 }
 
 function formatTime(timeStr) {
@@ -74,13 +79,13 @@ function buildDefaultObjects(request) {
   const objects = [];
   const centerY = CANVAS_H / 2;
 
-  const title = new fabric.IText(request.event_name || 'Your Event', {
+  const title = new fabric.IText(formatFieldText(request.event_name || 'Your Event', 'title'), {
     left: CANVAS_W / 2,
-    top: centerY - 120,
+    top: centerY - 200,
     originX: 'center',
     originY: 'center',
     fontFamily: 'Playfair Display',
-    fontSize: 56,
+    fontSize: 65,
     fontWeight: '700',
     fill: '#1a1a1a',
     textAlign: 'center',
@@ -89,7 +94,11 @@ function buildDefaultObjects(request) {
   initTextObjectMetadata(title, 'title');
   objects.push(title);
 
-  const dateLine = [formatDate(request.date), formatTime(request.time)].filter(Boolean).join('  •  ');
+  const dateLine = [
+    `On ${formatDate(request.date)}`,
+    request.time ? `at ${formatTime(request.time)}` : '',
+  ].filter(Boolean).join('\n');
+  
   if (dateLine) {
     const dateObj = new fabric.IText(dateLine, {
       left: CANVAS_W / 2,
@@ -97,7 +106,7 @@ function buildDefaultObjects(request) {
       originX: 'center',
       originY: 'center',
       fontFamily: 'Inter',
-      fontSize: 28,
+      fontSize: 35,
       fill: '#333333',
       textAlign: 'center',
       name: 'date',
@@ -107,14 +116,14 @@ function buildDefaultObjects(request) {
   }
 
   if (request.venue) {
-    const venueObj = new fabric.IText(request.venue, {
+    const venueObj = new fabric.IText(`Venue: ${formatFieldText(request.venue, 'venue')}`, {
       left: CANVAS_W / 2,
-      top: centerY + 50,
+      top: centerY + 150,
       originX: 'center',
       originY: 'center',
       fontFamily: 'Inter',
-      fontSize: 24,
-      fill: '#555555',
+      fontSize: 35,
+      fill: '#333333',
       textAlign: 'center',
       name: 'venue',
     });
@@ -123,15 +132,15 @@ function buildDefaultObjects(request) {
   }
 
   if (request.special_message) {
-    const messageObj = new fabric.Textbox(request.special_message, {
+    const messageObj = new fabric.Textbox(formatFieldText(request.special_message, 'message'), {
       left: CANVAS_W / 2,
-      top: centerY + 130,
+      top: centerY + 250,
       width: 560,
       originX: 'center',
       originY: 'center',
       fontFamily: 'Inter',
-      fontSize: 20,
-      fill: '#6b6585',
+      fontSize: 35,
+      fill: '#333333',
       textAlign: 'center',
       name: 'message',
     });
@@ -147,9 +156,39 @@ function buildDefaultObjects(request) {
  * using each field's real value from the request, falling back to the
  * template's sample text if that field is empty.
  */
+
+// --- Auto-format card text by field type ---
+function toTitleCase(s) {
+  return s.replace(/\S+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+function toSentenceCase(s) {
+  const lower = s.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+function formatFieldText(text, field) {
+  if (!text || typeof text !== 'string') return text;
+  const t = text.trim();
+  switch (field) {
+    case 'title':
+      return toTitleCase(t);                 // "birthday party" → "Birthday Party"
+    case 'name':
+    case 'names':
+      return toTitleCase(t);                 // "olivia" → "Olivia", "john smith" → "John Smith"
+    case 'venue':
+    case 'address':
+    case 'special_message':
+    case 'message':
+      return toSentenceCase(t);              // "st xaviers college" → "St xaviers college"
+    default:
+      return t;                              // date, time, RSVP, custom → leave as typed
+  }
+}
+
+
 function buildObjectsFromLayout(layout, request, bgHeight = CANVAS_H) {
   return layout.map((item) => {
     let text = request?.is_template ? (item.sample || request[item.field] || '') : (request[item.field] || item.sample || '');
+    text = formatFieldText(text, item.field);
 
     if (!request?.is_template && item.field === 'date') {
       const dateLine = [request.date, request.time].filter(Boolean).join('  •  ');

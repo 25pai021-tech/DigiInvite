@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from '../Shared/Button';
 
-export default function SuccessPage({ requestId, onGoDashboard, onViewRequests }) {
+export default function SuccessPage({ onGoDashboard, onViewRequests }) {
   return (
     <div style={{ textAlign: 'center', padding: '20px 0' }}>
       <div
@@ -30,11 +30,13 @@ export default function SuccessPage({ requestId, onGoDashboard, onViewRequests }
         ✓
       </div>
 
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, margin: '0 0 8px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, margin: '0 0 8px' }}>
         Your request has been submitted
       </h2>
-      <p style={{ color: 'var(--color-text-muted)', fontSize: 14, maxWidth: 380, margin: '0 auto 26px' }}>
-        You'll receive an email once your design is ready.
+      <p style={{ color: 'var(--color-text-muted)', fontSize: 15, maxWidth: 440, margin: '0 auto 26px' }}>
+        Almost there! Head to <strong>My Requests</strong> and click
+        <strong> “Generate My Card”</strong> to create your AI design — then open it in
+        the editor to customise and download.
       </p>
 
       <div
@@ -46,22 +48,25 @@ export default function SuccessPage({ requestId, onGoDashboard, onViewRequests }
           borderRadius: 'var(--radius-md)',
           padding: '18px 28px',
           marginBottom: 30,
+          textAlign: 'left',
         }}
       >
         <div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-faint)', marginBottom: 4 }}>REQUEST ID</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--color-gold)' }}>{requestId}</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-faint)', marginBottom: 4 }}>NEXT STEP</div>
+          <div style={{ fontSize: 14 }}>Generate My Card</div>
         </div>
         <div style={{ width: 1, background: 'var(--color-border)' }} />
         <div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-faint)', marginBottom: 4 }}>ESTIMATED DELIVERY</div>
-          <div style={{ fontSize: 14 }}>48 Hours</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-faint)', marginBottom: 4 }}>WHERE</div>
+          <div style={{ fontSize: 14 }}>Under “My Requests”</div>
         </div>
       </div>
 
+      
+
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-        <Button variant="ghost" onClick={onViewRequests}>My Requests</Button>
-        <Button variant="primary" onClick={onGoDashboard}>Dashboard</Button>
+        <Button variant="ghost" onClick={onGoDashboard}>Dashboard</Button>
+        <Button variant="primary" onClick={onViewRequests}>Go to My Requests</Button>
       </div>
     </div>
   );

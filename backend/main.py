@@ -19,6 +19,8 @@ from pydantic import BaseModel
 
 from db import supabase
 
+
+
 # from huggingface_hub import InferenceClient   # kept for reference, not used
 
 FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
@@ -266,7 +268,8 @@ def _translate_one(text, source, target, retries=4):
         try:
             result = GoogleTranslator(source=source, target=target).translate(text)
             if result and result.strip():
-                _translation_cache[(texts[i], source, target)] = val
+                _translation_cache[key] = result
+
                 return result
         except Exception:
             pass
@@ -598,7 +601,11 @@ def build_prompt(r, template=None):
     if r.get("couple_photo_url"):
         parts.append("with an elegant central framing area designed to showcase a couple portrait")
 
-    parts.append("decorated frame around a large empty blank centre, no text, no words, no letters, high resolution, portrait")
+    parts.append(
+        "completely blank empty center with NO text, NO letters, NO words, NO writing, "
+        "NO calligraphy, NO script, NO watermark, only decorative border and background, "
+        "clean smooth empty middle area, high resolution, portrait"
+    )
     return ", ".join(p for p in parts if p)
 
 
@@ -629,15 +636,22 @@ def generate_card(body: GenerateCardIn):
 
     # --- Pollinations.ai (current) ---
     try:
-        model = "flux"   # "flux" or "nanobanana"
+        model = "flux"   
+        # model = "zimage"
+
         encoded_prompt = urllib.parse.quote(prompt)
         pollinations_url = (
             f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-            f"?width=1024&height=1024&model={model}&nologo=true"
+            f"?width=1024&height=1280&model={model}&nologo=true&referrer=digiinvite"
         )
-        resp = requests.get(pollinations_url, timeout=120)
+        token = os.getenv("POLLINATIONS_TOKEN")
+        print("[pollinations] token loaded:", bool(token))
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        resp = requests.get(pollinations_url, headers=headers, timeout=120)
         resp.raise_for_status()
         image = Image.open(io.BytesIO(resp.content))
+        w, h = image.size
+        image = image.crop((0, 0, w, h - 40))   # remove bottom 40px
         # image = draw_details_on_card(image, row)  # keep this commented
     except Exception as e:
         raise HTTPException(502, f"Image generation failed: {e}")

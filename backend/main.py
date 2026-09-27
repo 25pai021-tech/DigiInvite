@@ -11,6 +11,7 @@ from deep_translator import GoogleTranslator
 import razorpay
 import hmac
 import hashlib
+import base64
 
 from PIL import Image, ImageDraw, ImageFont
 from fastapi import FastAPI, Depends, HTTPException, Header, File, UploadFile
@@ -556,58 +557,70 @@ def build_prompt(r, template=None):
     raw_theme = (r.get("theme") or "").strip()
     theme = _norm(raw_theme)
     event = _norm(r.get("event_type"))
-
     event_words = event.replace("-", " ") or "celebration"
-    theme_words = theme or "elegant"
 
-    is_custom_theme = bool(theme and theme not in THEME_STYLES and theme != "custom")
+    theme_motifs = {
+        "royal": "regal gold crown and crest motifs, deep jewel tones, ornate detailing",
+        "floral": "hand-painted flowers, delicate leaves and vines, watercolour botanical accents",
+        "luxury": "shimmering gold foil accents, rich textures, lavish ornate corners",
+        "modern": "clean geometric shapes, sleek minimal decorative accents",
+        "traditional": "ethnic Indian patterns, warm earthy tones, cultural decorative motifs",
+        "minimal": "thin simple decorative lines, lots of empty white space, airy",
+    }
+    event_motifs = {
+        "wedding": "subtle ring and heart accents",
+        "birthday": "balloons and confetti accents",
+        "engagement": "ring and heart accents",
+        "housewarming": "cosy home accents",
+        "baby-shower": "soft pastel baby accents",
+        "corporate": "clean professional accents",
+        "graduation": "graduation cap and scroll accents",
+        "anniversary": "entwined hearts accents",
+    }
 
-    if is_custom_theme:
+    # A custom theme is anything not in our preset list (e.g. "space", "vintage").
+    is_custom = bool(raw_theme and theme not in theme_motifs and theme != "custom")
+
+    if is_custom:
+        # Make the custom theme DOMINANT so event/template motifs don't drown it.
         parts = [
-            f"A magnificent {raw_theme} themed {event_words} invitation card background",
-            f"distinctive {raw_theme} theme styling with authentic {raw_theme} motifs, visual elements, textures and atmosphere",
-            f"creative immersion in {raw_theme} aesthetic",
+            f"A decorative {raw_theme} themed border and background artwork for a {event_words} celebration",
+            f"strong {raw_theme} theme: {raw_theme} inspired motifs, colours, textures and atmosphere filling the entire border",
+            f"clearly and obviously {raw_theme} themed",
+            "an elegant frame surrounding a completely empty blank center",
         ]
         if event == "wedding":
-            parts.append("romantic wedding invitation, intertwined wedding rings, elegant celebration mood")
-        elif event in EVENT_STYLES:
-            parts.append(EVENT_STYLES[event])
+            parts.append("with subtle romantic accents")
     else:
-        parts = [f"A {theme_words} {event_words} invitation card background"]
-        if event in EVENT_STYLES:
-            parts.append(EVENT_STYLES[event])
-        if theme in THEME_STYLES:
-            parts.append(THEME_STYLES[theme])
+        parts = [
+            f"An ornamental decorative border and background artwork for a {event_words} celebration",
+            "an elegant decorative frame surrounding a completely empty blank center",
+        ]
+        if event in event_motifs:
+            parts.append(event_motifs[event])
+        if theme in theme_motifs:
+            parts.append(theme_motifs[theme])
 
     if r.get("color"):
         parts.append(f"in a {r['color']} colour palette")
-    if template:
+
+    # Skip template motifs for custom themes — they conflict with the theme.
+    if template and not is_custom:
         if template.get("colors"):
             parts.append(f"colour palette of {template['colors']}")
-        if template.get("style_keywords"):
-            parts.append(str(template["style_keywords"]))
         if template.get("motifs"):
-            parts.append(f"featuring {template['motifs']}")
-        if template.get("mood"):
-            parts.append(f"{template['mood']} mood")
-        if template.get("religion"):
-            parts.append(f"{template['religion']} cultural motifs")
-        if template.get("region"):
-            parts.append(f"{template['region']} regional aesthetic")
-
-    if r.get("instructions"):
-        parts.append(str(r["instructions"]))
+            parts.append(f"decorated with {template['motifs']}")
 
     if r.get("couple_photo_url"):
-        parts.append("with an elegant central framing area designed to showcase a couple portrait")
+        parts.append("with an empty blank frame in the middle for placing a photo, no people, no faces")
 
     parts.append(
-        "completely blank empty center with NO text, NO letters, NO words, NO writing, "
-        "NO calligraphy, NO script, NO watermark, only decorative border and background, "
-        "clean smooth empty middle area, high resolution, portrait"
+        "the entire center is empty blank negative space, "
+        "absolutely NO text, NO letters, NO words, NO writing, NO calligraphy, NO numbers, "
+        "NO printed card, NO poster, NO paper document, NO people, NO faces, "
+        "only a decorative border with an empty middle area, high resolution"
     )
     return ", ".join(p for p in parts if p)
-
 
 class GenerateCardIn(BaseModel):
     request_id: str
@@ -634,27 +647,45 @@ def generate_card(body: GenerateCardIn):
     # except Exception as e:
     #     raise HTTPException(502, f"Image generation failed: {e}")
 
-    # --- Pollinations.ai (current) ---
-    try:
-        model = "flux"   
-        # model = "zimage"
+    # --- Cloudflare Workers AI (Stable Diffusion XL) ---
+    CF_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    CF_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
+    CF_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
+    cf_url = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{CF_MODEL}"
 
-        encoded_prompt = urllib.parse.quote(prompt)
-        pollinations_url = (
-            f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-            f"?width=1024&height=1280&model={model}&nologo=true&referrer=digiinvite"
-        )
-        token = os.getenv("POLLINATIONS_TOKEN")
-        print("[pollinations] token loaded:", bool(token))
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
-        resp = requests.get(pollinations_url, headers=headers, timeout=120)
-        resp.raise_for_status()
-        image = Image.open(io.BytesIO(resp.content))
-        w, h = image.size
-        image = image.crop((0, 0, w, h - 40))   # remove bottom 40px
-        # image = draw_details_on_card(image, row)  # keep this commented
-    except Exception as e:
-        raise HTTPException(502, f"Image generation failed: {e}")
+    negative_prompt = (
+        "text, words, letters, writing, calligraphy, numbers, typography, caption, title, "
+        "printed invitation, invitation card, poster, paper, document, label, "
+        "watermark, signature, logo, "
+        "people, person, human, man, woman, face, portrait, child, crowd"
+    )
+
+    image = None
+    last_err = None
+    for attempt in range(3):
+        try:
+            resp = requests.post(
+                cf_url,
+                headers={"Authorization": f"Bearer {CF_API_TOKEN}"},
+                json={
+                    "prompt": prompt,
+                    "negative_prompt": negative_prompt,
+                    "width": 1024,
+                    "height": 1024,
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            image = Image.open(io.BytesIO(resp.content))   # SDXL returns raw PNG bytes
+            break
+        except Exception as e:
+            last_err = e
+            print(f"[cloudflare] attempt {attempt+1} failed: {e}")
+            time.sleep(2 * (attempt + 1))
+
+    if image is None:
+        raise HTTPException(502, f"Image generation failed: {last_err}")
+    # image = draw_details_on_card(image, row)  # keep this commented
 
     # 4. convert to PNG bytes
     buf = io.BytesIO()
@@ -674,3 +705,4 @@ def generate_card(body: GenerateCardIn):
     ).eq("id", body.request_id).execute()
 
     return {"success": True, "prompt": prompt, "image_url": image_url}
+

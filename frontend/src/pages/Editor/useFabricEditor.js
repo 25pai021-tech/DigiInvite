@@ -94,6 +94,31 @@ function buildDefaultObjects(request) {
   initTextObjectMetadata(title, 'title');
   objects.push(title);
 
+ // Couple names (wedding / engagement / anniversary)
+  const COUPLE_EVENTS = ['wedding', 'engagement', 'anniversary'];
+  if (
+    COUPLE_EVENTS.includes((request.event_type || '').toLowerCase()) &&
+    (request.bride_name || request.groom_name)
+  ) {
+    const names = [request.bride_name, request.groom_name]
+      .filter(Boolean)
+      .map((n) => formatFieldText(n, 'name'))
+      .join(' & ');
+    const namesObj = new fabric.IText(names, {
+      left: CANVAS_W / 2,
+      top: centerY - 90,
+      originX: 'center',
+      originY: 'center',
+      fontFamily: 'Playfair Display',
+      fontSize: 42,
+      fill: '#1a1a1a',
+      textAlign: 'center',
+      name: 'couple_names',
+    });
+    initTextObjectMetadata(namesObj, 'name');
+    objects.push(namesObj);
+  }
+
   const dateLine = [
     `On ${formatDate(request.date)}`,
     request.time ? `at ${formatTime(request.time)}` : '',
@@ -146,6 +171,23 @@ function buildDefaultObjects(request) {
     });
     initTextObjectMetadata(messageObj, 'message');
     objects.push(messageObj);
+  }
+
+  if (request.host_name) {
+    const hostObj = new fabric.IText(`Hosted by ${formatFieldText(request.host_name, 'name')}`, {
+      left: CANVAS_W / 2,
+      top: centerY + 200,
+      originX: 'center',
+      originY: 'center',
+      fontFamily: 'Inter',
+      fontSize: 30,
+      fontStyle: 'italic',
+      fill: '#333333',
+      textAlign: 'center',
+      name: 'host',
+    });
+    initTextObjectMetadata(hostObj, 'host');
+    objects.push(hostObj);
   }
 
   return objects;

@@ -14,6 +14,7 @@ import ContextMenu from './ContextMenu';
 import Rulers from './Rulers';
 import './editor.css';
 
+const API_URL = 'http://localhost:8000';
 const TEXT_TYPES = ['i-text', 'textbox', 'text'];
 
 export default function Editor() {
@@ -153,6 +154,65 @@ export default function Editor() {
     link.href = dataUrl;
     link.download = `${(request.event_name || 'invitation').replace(/\s+/g, '-')}.${format}`;
     link.click();
+  };
+
+    const handlePay = async () => {
+    try {
+      // must be a saved request (not an unsaved template)
+      if (request.is_template) {
+        alert('Please click "Save Edits" first, then pay.');
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { navigate('/login'); return; }
+
+      // 1) create the order on our backend
+      const orderRes = await fetch(`${API_URL}/createOrder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ request_id: request.id }),
+      });
+      if (!orderRes.ok) throw new Error('Could not start payment.');
+      const order = await orderRes.json();
+
+      // 2) open the Razorpay popup
+      const options = {
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'DigiInvite',
+        description: 'Invitation download',
+        order_id: order.order_id,
+        theme: { color: '#7a1030' },
+        handler: async (response) => {
+          // 3) verify on our backend → marks the request Paid
+          const verifyRes = await fetch(`${API_URL}/verifyPayment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              request_id: request.id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+          if (verifyRes.ok) {
+            setRequest((prev) => ({ ...prev, status: 'Paid' })); // unlocks downloads
+            editor.removeWatermark();
+            alert('Payment successful! You can now download your card.');
+          } else {
+            alert('Payment could not be verified.');
+          }
+        },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Payment failed to start.');
+    }
   };
 
   const handleDownloadPdf = async () => {
@@ -337,7 +397,7 @@ export default function Editor() {
             <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
           </div>
         ) : (
-          <button className="editor-btn editor-btn-green" onClick={() => navigate('/pricing')}>
+          <button className="editor-btn editor-btn-green" onClick={handlePay}>
             Pay to Download
           </button>
         )}

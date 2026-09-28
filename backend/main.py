@@ -119,7 +119,7 @@ app.add_middleware(
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-
+INVITATION_PRICE_RUPEES = 99
 
 @app.get("/")
 def home():
@@ -162,7 +162,6 @@ class RSVPIn(BaseModel):
 
 class CreateOrderIn(BaseModel):
     request_id: str
-    amount: int          # rupees, e.g. 499
 
 
 class VerifyPaymentIn(BaseModel):
@@ -211,7 +210,7 @@ def create_order(body: CreateOrderIn, user=Depends(get_current_user)):
 
     # Razorpay works in paise, so multiply rupees by 100
     order = razorpay_client.order.create({
-        "amount": body.amount * 100,
+        "amount": INVITATION_PRICE_RUPEES * 100,
         "currency": "INR",
         "receipt": body.request_id,
         "notes": {"request_id": body.request_id},

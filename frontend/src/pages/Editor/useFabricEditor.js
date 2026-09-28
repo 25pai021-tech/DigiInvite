@@ -14,6 +14,38 @@ const CANVAS_W = 800;
 const CANVAS_H = 1000;
 const HISTORY_LIMIT = 100;
 const PREVIEW_BUCKET = 'design-uploads';
+const WATERMARK_NAME = '__watermark';
+
+
+function buildWatermark(width, height) {
+  const items = [];
+  const stepX = 320;
+  const stepY = 210;
+  for (let y = -40; y < height + 60; y += stepY) {
+    for (let x = -80; x < width + 80; x += stepX) {
+      items.push(new fabric.Text('DigiInvite  •  PREVIEW', {
+        left: x,
+        top: y,
+        angle: -30,
+        fontSize: 40,                       // bigger, per your ask
+        fontWeight: 'bold',
+        fontFamily: 'Arial, sans-serif',
+        fill: 'rgba(255,255,255,0.5)',      // white fill…
+        stroke: 'rgba(0,0,0,0.45)',         // …dark outline → visible on any colour
+        strokeWidth: 1.2,
+        selectable: false,
+        evented: false,
+      }));
+    }
+  }
+  return new fabric.Group(items, {
+    name: WATERMARK_NAME,
+    selectable: false,
+    evented: false,
+    excludeFromExport: false,   // stays in the pixels — console/export can't skip it
+  });
+}
+
 
 const CUSTOM_PROPS = [
   'name',
@@ -376,6 +408,9 @@ export function useFabricEditor({ request, onSaved }) {
   const [snapToObjects, setSnapToObjects] = useState(true);
   const guideLinesRef = useRef([]);
   const bgHeightRef = useRef(CANVAS_H);
+  const isPaid = request?.status === 'Paid' || request?.status === 'Completed';
+  const isPaidRef = useRef(isPaid);
+  useEffect(() => { isPaidRef.current = isPaid; }, [isPaid]);
   const snapToGridRef = useRef(snapToGrid);
   const snapToObjectsRef = useRef(snapToObjects);
   useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
@@ -393,13 +428,20 @@ export function useFabricEditor({ request, onSaved }) {
     });
     canvasRef.current = canvas;
 
+    const paid = request.status === 'Paid' || request.status === 'Completed';
     const finishLoad = () => {
+      if (!paid) {
+        const wm = buildWatermark(CANVAS_W, bgHeightRef.current || CANVAS_H);
+        canvas.add(wm);
+        canvas.bringToFront(wm);
+      }
       undoStack.current = [JSON.stringify(canvas.toJSON(CUSTOM_PROPS))];
       redoStack.current = [];
       setIsDirty(false);
       canvas.requestRenderAll();
       refreshLayersRef.current();
     };
+
 
     const loadDefaultObjects = (bgHeight = CANVAS_H) => {
       const layout = request.templates?.text_layout;
@@ -499,7 +541,7 @@ export function useFabricEditor({ request, onSaved }) {
     const refreshLayers = () => {
       const objs = canvas
         .getObjects()
-        .filter((o) => o.name !== '__background')
+        .filter((o) => o.name !== '__background' && o.name !== WATERMARK_NAME)
         .map((o) => {
           ensureId(o);
           return { id: o.__uid, name: readableName(o), type: o.type, visible: o.visible !== false, locked: !!o.locked };
@@ -1177,9 +1219,21 @@ export function useFabricEditor({ request, onSaved }) {
     setSaveState('saving');
     setSaveError('');
     try {
+      // Preview thumbnail keeps the watermark; editor_state must NOT store it
+      // (it's re-applied on load based on payment status).
+      const dataUrl = canvas.toDataURL({ format: 'png', quality: 0.9 });
+      suppressHistory.current = true;
+      canvas.getObjects()
+        .filter((o) => o.name === WATERMARK_NAME)
+        .forEach((o) => canvas.remove(o));
       const json = canvas.toJSON(CUSTOM_PROPS);
       json.languageState = { activeLanguage, translationMode };
-      const dataUrl = canvas.toDataURL({ format: 'png', quality: 0.9 });
+      if (!isPaidRef.current) {
+        const wm = buildWatermark(CANVAS_W, bgHeightRef.current || CANVAS_H);
+        canvas.add(wm);
+        canvas.bringToFront(wm);
+      }
+      suppressHistory.current = false;
 
       const {
         data: { user: currentUser },
@@ -1258,28 +1312,71 @@ export function useFabricEditor({ request, onSaved }) {
   }, [isDirty, save]);
 
   // ── export for download ─────────────────────────────────────
-  const exportImage = useCallback((format = 'png', multiplier = 2, opts = {}) => {
+    const exportImage = useCallback((format = 'png', multiplier = 2, opts = {}) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
+
+    const w = CANVAS_W;
+    const h = bgHeightRef.current || CANVAS_H;
+    const prevZoom = canvas.getZoom();
+    canvas.setZoom(1);
+    canvas.setWidth(w);
+    canvas.setHeight(h);
+
     const prevBg = canvas.backgroundColor;
     if (format === 'png' && opts.transparent) canvas.backgroundColor = null;
     const dataUrl = canvas.toDataURL({ format: format === 'jpg' ? 'jpeg' : 'png', quality: 0.95, multiplier });
     if (format === 'png' && opts.transparent) canvas.backgroundColor = prevBg;
+
+    canvas.setZoom(prevZoom);
+    canvas.setWidth(w * prevZoom);
+    canvas.setHeight(h * prevZoom);
+    canvas.requestRenderAll();
+
     return dataUrl;
   }, []);
 
-  const exportPdf = useCallback(async (multiplier = 2) => {
+     const exportPdf = useCallback(async (multiplier = 2) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const { jsPDF } = await import('jspdf');
+
+    const w = CANVAS_W;
+    const h = bgHeightRef.current || CANVAS_H;
+
+    // Capture at actual size, ignoring current view zoom
+    const prevZoom = canvas.getZoom();
+    canvas.setZoom(1);
+    canvas.setWidth(w);
+    canvas.setHeight(h);
     const dataUrl = canvas.toDataURL({ format: 'png', quality: 0.95, multiplier });
+    canvas.setZoom(prevZoom);
+    canvas.setWidth(w * prevZoom);
+    canvas.setHeight(h * prevZoom);
+    canvas.requestRenderAll();
+
+    // Page sized in mm: A4 width, height follows the card's aspect ratio.
+    // Image fills the whole page → opens at a normal 100%, no huge zoom.
+    const pageW = 210;                    // A4 width in mm
+    const pageH = pageW * (h / w);        // keep the card's proportions
     const pdf = new jsPDF({
-      orientation: CANVAS_H >= CANVAS_W ? 'portrait' : 'landscape',
-      unit: 'px',
-      format: [CANVAS_W, CANVAS_H],
+      orientation: pageH >= pageW ? 'portrait' : 'landscape',
+      unit: 'mm',
+      format: [pageW, pageH],
     });
-    pdf.addImage(dataUrl, 'PNG', 0, 0, CANVAS_W, CANVAS_H);
+    pdf.addImage(dataUrl, 'PNG', 0, 0, pageW, pageH);
     return pdf;
+  }, []);
+
+  const removeWatermark = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    suppressHistory.current = true;
+    canvas.getObjects()
+      .filter((o) => o.name === WATERMARK_NAME)
+      .forEach((o) => canvas.remove(o));
+    suppressHistory.current = false;
+    canvas.requestRenderAll();
   }, []);
 
   return {
@@ -1345,6 +1442,7 @@ export function useFabricEditor({ request, onSaved }) {
     save,
     exportImage,
     exportPdf,
+    removeWatermark,
   };
 }
 

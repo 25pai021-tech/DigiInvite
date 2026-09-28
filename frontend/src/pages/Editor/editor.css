@@ -178,6 +178,13 @@
   max-width: 100%;   /* never grow past the available space */
 }
 
+/* Deter dragging the canvas image out or selecting it */
+.editor-canvas-wrap canvas {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+
 .editor-properties {
   background: var(--card-bg);
   border: 1px solid var(--card-border);

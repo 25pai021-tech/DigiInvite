@@ -9,6 +9,13 @@ import {
   isDynamicField,
   fitTranslatedText,
 } from './languageService';
+import {
+  initEditorFonts,
+  loadFont,
+  loadFontsForObjects,
+  applyFontToTarget,
+  cleanFontName,
+} from './fontManager';
 
 const CANVAS_W = 800;
 const CANVAS_H = 1000;
@@ -65,6 +72,7 @@ const CUSTOM_PROPS = [
 function initTextObjectMetadata(obj, fieldType = 'custom') {
   if (!obj) return obj;
   const isDyn = isDynamicField(obj.text, obj.name, fieldType);
+  const currentFont = cleanFontName(obj.fontFamily || 'Inter');
   obj.set({
     originalText: obj.text || '',
     sourceLanguage: 'en',
@@ -73,7 +81,8 @@ function initTextObjectMetadata(obj, fieldType = 'custom') {
     fieldType: fieldType || (isDyn ? 'protected' : 'text'),
     translations: { en: obj.text || '' },
     translationMode: 'replace',
-    originalFontFamily: obj.fontFamily || 'Inter',
+    fontFamily: currentFont,
+    originalFontFamily: currentFont,
     originalFontSize: obj.fontSize || 24,
   });
   return obj;
@@ -272,13 +281,14 @@ function buildObjectsFromLayout(layout, request, bgHeight = CANVAS_H) {
     const Ctor = item.field === 'venue' || item.field === 'special_message' ? fabric.Textbox : fabric.IText;
     const heightScale = bgHeight / CANVAS_H;
 
+    const cleanFont = cleanFontName(item.font || 'Playfair Display');
     const obj = new Ctor(text, {
       left: (item.x / 100) * CANVAS_W,
       top: (item.y / 100) * bgHeight,
       originX: 'center',
       originY: 'center',
       width: Ctor === fabric.Textbox ? CANVAS_W * 0.8 : undefined,
-      fontFamily: item.font || 'Playfair Display',
+      fontFamily: cleanFont,
       fontSize: (item.size || 20) * heightScale,
       fill: item.color || '#1a1a1a',
       textAlign: item.align || 'center',
@@ -420,6 +430,8 @@ export function useFabricEditor({ request, onSaved }) {
   useEffect(() => {
     if (!canvasElRef.current || !request) return;
 
+    initEditorFonts();
+
     const canvas = new fabric.Canvas(canvasElRef.current, {
       width: CANVAS_W,
       height: CANVAS_H,
@@ -442,13 +454,22 @@ export function useFabricEditor({ request, onSaved }) {
       refreshLayersRef.current();
     };
 
-
-    const loadDefaultObjects = (bgHeight = CANVAS_H) => {
+    const loadDefaultObjects = async (bgHeight = CANVAS_H) => {
       const layout = request.templates?.text_layout;
       const objects = (layout && layout.length)
         ? buildObjectsFromLayout(layout, request, bgHeight)
         : buildDefaultObjects(request);
       objects.forEach((obj) => canvas.add(obj));
+
+      await loadFontsForObjects(objects);
+      objects.forEach((obj) => {
+        if (['i-text', 'textbox', 'text'].includes(obj.type)) {
+          if (typeof obj.initDimensions === 'function') obj.initDimensions();
+          obj.dirty = true;
+          obj.setCoords();
+        }
+      });
+      canvas.requestRenderAll();
 
       if (request.couple_photo_url) {
         addUploadedPhoto(canvas, request.couple_photo_url, bgHeight, () => {
@@ -497,7 +518,7 @@ export function useFabricEditor({ request, onSaved }) {
           if (state.languageState.activeLanguage) setActiveLanguage(state.languageState.activeLanguage);
           if (state.languageState.translationMode) setTranslationMode(state.languageState.translationMode);
         }
-        canvas.loadFromJSON(state, () => {
+        canvas.loadFromJSON(state, async () => {
           // Resize the canvas to match the restored background image,
           // otherwise a tall card gets clipped at the default 1000px height.
           const bg = canvas.getObjects().find((o) => o.name === '__background');
@@ -507,6 +528,15 @@ export function useFabricEditor({ request, onSaved }) {
             canvas.setHeight(realBgHeight);
             bgHeightRef.current = realBgHeight;
           }
+
+          // Ensure all fonts present in saved state are loaded and rendered
+          const textObjs = canvas.getObjects().filter((o) => ['i-text', 'textbox', 'text'].includes(o.type));
+          await loadFontsForObjects(textObjs);
+          textObjs.forEach((o) => {
+            if (typeof o.initDimensions === 'function') o.initDimensions();
+            o.dirty = true;
+            o.setCoords();
+          });
 
           // If the request has an uploaded photo that was not yet part of this saved state, add it
           const hasPhoto = canvas.getObjects().some((o) => o.name === 'couple_photo' || (o.type === 'image' && o.name !== '__background'));
@@ -658,7 +688,14 @@ export function useFabricEditor({ request, onSaved }) {
     const canvas = canvasRef.current;
     if (!canvas || !json) return;
     suppressHistory.current = true;
-    canvas.loadFromJSON(JSON.parse(json), () => {
+    canvas.loadFromJSON(JSON.parse(json), async () => {
+      const textObjs = canvas.getObjects().filter((o) => ['i-text', 'textbox', 'text'].includes(o.type));
+      await loadFontsForObjects(textObjs);
+      textObjs.forEach((o) => {
+        if (typeof o.initDimensions === 'function') o.initDimensions();
+        o.dirty = true;
+        o.setCoords();
+      });
       canvas.requestRenderAll();
       suppressHistory.current = false;
       setIsDirty(true);
@@ -718,16 +755,46 @@ export function useFabricEditor({ request, onSaved }) {
   const updateActive = useCallback((props) => {
     const canvas = canvasRef.current;
     const obj = canvas?.getActiveObject();
-    if (!obj) return;
+    if (!canvas || !obj) return;
+
     if (props.text !== undefined && (obj.activeLanguage === 'en' || !obj.activeLanguage)) {
       props.originalText = props.text;
       props.translations = { ...(obj.translations || {}), en: props.text };
     }
-    obj.set(props);
-    obj.setCoords();
-    canvas.requestRenderAll();
-    canvas.fire('object:modified', { target: obj });
-    setActiveObject({ ...obj });
+
+    if (props.fontFamily) {
+      const cleanFont = cleanFontName(props.fontFamily);
+      const restProps = { ...props, fontFamily: cleanFont, originalFontFamily: cleanFont };
+      applyFontToTarget(canvas, obj, cleanFont, restProps);
+      setActiveObject({ ...obj });
+
+      loadFont(cleanFont).then(() => {
+        if (!canvas) return;
+        if (obj.type === 'activeSelection') {
+          obj.getObjects().forEach((child) => {
+            if (typeof child.initDimensions === 'function') child.initDimensions();
+            child.dirty = true;
+            child.setCoords();
+          });
+        } else {
+          if (typeof obj.initDimensions === 'function') obj.initDimensions();
+          obj.dirty = true;
+          obj.setCoords();
+        }
+        canvas.requestRenderAll();
+        setActiveObject({ ...obj });
+      });
+    } else {
+      obj.set(props);
+      if (['i-text', 'textbox', 'text'].includes(obj.type)) {
+        if (typeof obj.initDimensions === 'function') obj.initDimensions();
+        obj.dirty = true;
+      }
+      obj.setCoords();
+      canvas.requestRenderAll();
+      canvas.fire('object:modified', { target: obj });
+      setActiveObject({ ...obj });
+    }
   }, []);
 
   const duplicateObject = useCallback((target) => {
@@ -844,17 +911,22 @@ export function useFabricEditor({ request, onSaved }) {
   const addText = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const defaultFont = 'Playfair Display';
+    loadFont(defaultFont);
     const text = new fabric.IText('Double-click to edit', {
       left: CANVAS_W / 2,
       top: CANVAS_H / 2,
       originX: 'center',
-      fontFamily: 'Inter',
-      fontSize: 24,
+      fontFamily: defaultFont,
+      fontSize: 28,
       fill: '#1a1a1a',
     });
     initTextObjectMetadata(text, 'custom');
     canvas.add(text);
     canvas.setActiveObject(text);
+    if (typeof text.initDimensions === 'function') text.initDimensions();
+    text.dirty = true;
+    text.setCoords();
     canvas.requestRenderAll();
   }, []);
 

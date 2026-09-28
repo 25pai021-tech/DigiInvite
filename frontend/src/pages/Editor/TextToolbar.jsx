@@ -1,20 +1,31 @@
 import React from 'react';
-
-const FONTS = ['Inter', 'Playfair Display', 'Georgia', 'Arial', 'Times New Roman', 'Courier New'];
+import { AVAILABLE_FONTS, FONT_CATEGORIES, cleanFontName } from './fontManager';
 
 export default function TextToolbar({ object, onUpdate, onDuplicate, onDelete, onToggleLock, onBringForward, onSendBackward }) {
   if (!object) return null;
   const locked = !!object.locked;
+  const currentFont = cleanFontName(object.fontFamily || 'Inter');
+  const isKnown = AVAILABLE_FONTS.some((f) => f.name.toLowerCase() === currentFont.toLowerCase());
 
   return (
     <div className="editor-floating-toolbar">
       <select
-        value={object.fontFamily || 'Inter'}
+        value={currentFont}
         onChange={(e) => onUpdate({ fontFamily: e.target.value })}
         title="Font family"
+        className="editor-font-select"
       >
-        {FONTS.map((f) => (
-          <option key={f} value={f}>{f}</option>
+        {!isKnown && currentFont && (
+          <option value={currentFont}>{currentFont}</option>
+        )}
+        {FONT_CATEGORIES.map((cat) => (
+          <optgroup key={cat} label={cat}>
+            {AVAILABLE_FONTS.filter((f) => f.category === cat).map((f) => (
+              <option key={f.name} value={f.name} style={{ fontFamily: f.name }}>
+                {f.name}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
 

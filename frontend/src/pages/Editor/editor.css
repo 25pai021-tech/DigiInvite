@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Bodoni+Moda:wght@400;700&family=Caveat:wght@400;700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Dancing+Script:wght@400;600;700&family=Great+Vibes&family=Inter:wght@400;600;700&family=Italianno&family=Lato:wght@400;700&family=Marcellus&family=Merriweather:wght@400;700&family=MonteCarlo&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600;700&family=Pacifico&family=Parisienne&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;600;700&family=Prata&family=Raleway:wght@400;600;700&family=Sacramento&family=Tangerine:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Gujarati:wght@400;600&family=Noto+Sans+Gurmukhi:wght@400;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Malayalam:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&display=swap');
 
 .editor-page {
@@ -162,6 +163,11 @@
   border-radius: 6px;
   padding: 4px 6px;
   font-size: 13px;
+}
+.editor-font-select {
+  min-width: 140px;
+  max-width: 180px;
+  font-weight: 500;
 }
 .editor-toolbar-slider { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
 .editor-toolbar-slider input { width: 60px; }

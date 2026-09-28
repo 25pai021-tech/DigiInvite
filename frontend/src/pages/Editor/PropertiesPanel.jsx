@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SUPPORTED_LANGUAGES } from './languageService';
+import { AVAILABLE_FONTS, FONT_CATEGORIES, cleanFontName } from './fontManager';
 
 export default function PropertiesPanel({
   object,
@@ -21,12 +22,35 @@ export default function PropertiesPanel({
   const isText = ['i-text', 'textbox', 'text'].includes(object.type);
   const width = Math.round((object.width || 0) * (object.scaleX || 1));
   const height = Math.round((object.height || 0) * (object.scaleY || 1));
+  const currentFont = isText ? cleanFontName(object.fontFamily || 'Inter') : '';
+  const isKnown = AVAILABLE_FONTS.some((f) => f.name.toLowerCase() === currentFont.toLowerCase());
 
   return (
     <aside className="editor-properties">
       {isText && (
         <div className="editor-properties-section">
           <h4>Text</h4>
+          <label className="editor-properties-col-label">
+            <span>Font Family</span>
+            <select
+              value={currentFont}
+              className="editor-properties-select"
+              onChange={(e) => onUpdate({ fontFamily: e.target.value })}
+            >
+              {!isKnown && currentFont && (
+                <option value={currentFont}>{currentFont}</option>
+              )}
+              {FONT_CATEGORIES.map((cat) => (
+                <optgroup key={cat} label={cat}>
+                  {AVAILABLE_FONTS.filter((f) => f.category === cat).map((f) => (
+                    <option key={f.name} value={f.name} style={{ fontFamily: f.name }}>
+                      {f.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
           <label className="editor-properties-col-label">
             <span>Content</span>
             <textarea

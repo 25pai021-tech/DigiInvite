@@ -141,9 +141,12 @@ export default function Editor() {
   }
   if (!request) return null;
 
-  const isPaid = request.status === 'Paid' || request.status === 'Completed';
   const activeType = editor.activeObject?.type;
-  const isText = TEXT_TYPES.includes(activeType);
+  const isText =
+    TEXT_TYPES.includes(activeType) ||
+    (activeType === 'activeSelection' &&
+      Boolean(editor.activeObject?.getObjects?.().length) &&
+      editor.activeObject.getObjects().every((o) => TEXT_TYPES.includes(o.type)));
   const isImage = activeType === 'image';
   const isShapeLike = editor.activeObject && !isText && !isImage;
 

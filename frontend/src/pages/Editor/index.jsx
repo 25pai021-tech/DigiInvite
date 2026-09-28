@@ -140,6 +140,7 @@ export default function Editor() {
     return <div style={centerStyle}>{error}</div>;
   }
   if (!request) return null;
+  const isPaid = request.status === 'Paid' || request.status === 'Completed';
 
   const activeType = editor.activeObject?.type;
   const isText =

@@ -171,11 +171,10 @@
 .tpl-overlay-text {
   position: absolute;
   transform: translate(-50%, -50%);   /* centers the text ON the point, matching the Editor */
-  white-space: normal;        /* WRAP the full text instead of clipping it to one line */
-  word-break: break-word;     /* wrap long single words too */
+  white-space: nowrap;        /* ONE line, exactly like the editor — the JS font size
+                                 is scaled to the card so it fits without wrapping */
   pointer-events: none;       /* clicks pass through to the card, not the text */
   line-height: 1.15;
-  max-width: 92%;             /* stay inside the card; wraps within this width */
   overflow: visible;          /* never clip -> no "..." truncation */
   text-align: center;
 }

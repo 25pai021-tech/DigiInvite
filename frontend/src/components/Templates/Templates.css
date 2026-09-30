@@ -136,7 +136,9 @@
   aspect-ratio: 4 / 5;
   background: var(--bg3);
   overflow: hidden;
-  container-type: inline-size;
+  /* fixed aspect-ratio gives a definite height, so `size` containment is safe
+     and 'cqb' (container height) can scale the overlay font like the editor */
+  container-type: size;
   container-name: tplframe;
 }
 
@@ -171,10 +173,9 @@
 .tpl-text-line {
   position: absolute;
   transform: translate(-50%, -50%);
-  white-space: normal;        /* WRAP the full text instead of clipping to one line */
-  word-break: break-word;
+  white-space: nowrap;        /* ONE line like the editor; font is scaled to the
+                                 frame height (cqb) so it fits without wrapping */
   line-height: 1.15;
-  max-width: 92%;
   overflow: visible;          /* never clip -> no "..." */
   text-align: center;
   user-select: none;

@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { startFromTemplate } from '../../lib/startFromTemplate';
 import { useNavigate } from 'react-router-dom';
 import './TemplatesPage.css';
 
 const API_URL = 'http://localhost:8000';
+
+// Overall size of the preview text on the template cards. Lower = smaller text
+// with more margin around it. This is the single knob to tune the look.
+const CARD_TEXT_SCALE = 0.7;
 
 /**
  * Maps raw `event_type` values coming from the backend/templates table into a
@@ -210,32 +214,95 @@ function CategorySection({ category, expanded, onToggleExpand, onCustomize }) {
 
 function TemplateCard({ template, onCustomize }) {
   const thumb = getThumb(template);
-  const layout = template.text_layout;
+  const layout = Array.isArray(template.text_layout) ? template.text_layout : [];
+
+  const wrapRef = useRef(null);
+  const spanRefs = useRef({});
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setDims({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Size each line the way the editor does (size × height/1000), THEN shrink any
+  // line that is wider than the card so it fits inside the margins — just like
+  // the original. This keeps title/body proportions but never overflows,
+  // whatever font or text length a template has.
+  const fitLines = () => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const W = el.clientWidth, H = el.clientHeight;
+    if (!W || !H) return;
+
+    // 1) give every line its proportional base size (title bigger than body),
+    //    then measure how wide each one wants to be
+    const bases = {};
+    let k = 1;
+    const avail = W * 0.88;   // keep a margin, like the original
+    layout.forEach((item) => {
+      const span = spanRefs.current[item.id];
+      if (!span) return;
+      const base = Math.max(4, (item.size || 20) * H / 1000 * CARD_TEXT_SCALE);
+      bases[item.id] = base;
+      span.style.fontSize = base + 'px';
+      const natural = span.scrollWidth;
+      if (natural > avail) k = Math.min(k, avail / natural);   // widest line sets the scale
+    });
+
+    // 2) apply the SAME scale to every line so proportions are preserved and the
+    //    widest line just fits inside the margin (self-calibrating: if the base
+    //    is too big, k shrinks everything back down together)
+    if (k < 1) {
+      layout.forEach((item) => {
+        const span = spanRefs.current[item.id];
+        if (span && bases[item.id]) span.style.fontSize = (bases[item.id] * k) + 'px';
+      });
+    }
+  };
+
+  useLayoutEffect(fitLines, [dims, template.id]);
+  // re-fit once custom fonts finish loading (their real widths differ)
+  useEffect(() => {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLines);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dims, template.id]);
 
   return (
     <div className="tpl-card">
-      <div className="tpl-image-wrap">
+      <div className="tpl-image-wrap" ref={wrapRef}>
         {thumb ? (
-          <img src={thumb} alt="" loading="lazy" />
+          <img
+            src={thumb}
+            alt=""
+            loading="lazy"
+            onLoad={() => wrapRef.current && setDims({ w: wrapRef.current.clientWidth, h: wrapRef.current.clientHeight })}
+          />
         ) : (
           <div className="tpl-image-fallback" />
         )}
 
-        {Array.isArray(layout) && layout
+        {dims.h > 0 && layout
           .filter((item) => item.sample && item.sample.trim())
           .map((item) => (
             <span
               key={item.id}
+              ref={(el) => { spanRefs.current[item.id] = el; }}
               className="tpl-overlay-text"
               style={{
                 left: `${item.x}%`,
                 top: `${item.y}%`,
                 fontFamily: item.font || 'Inter',
-                // item.size is on the editor's 1000-tall reference; ~0.3 scales it
-                // to this small card while keeping the same title/body proportions
-                fontSize: `${Math.max(6, (item.size || 20) * 0.3)}px`,
                 color: item.color || '#1a1a1a',
                 textAlign: item.align || 'center',
+                whiteSpace: 'nowrap',   // force one line (fit-to-width handles size)
+                maxWidth: 'none',
+                overflow: 'visible',
               }}
             >
               {item.sample}

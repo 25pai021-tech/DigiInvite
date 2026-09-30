@@ -19,6 +19,10 @@ import {
 
 const CANVAS_W = 800;
 const CANVAS_H = 1000;
+// Correction for the OCR-derived text sizes, which run larger than the original.
+// Same factor the template-card previews use, so the editor matches the original
+// invitation's proportions. Lower = smaller text.
+const LAYOUT_TEXT_SCALE = 0.7;
 const HISTORY_LIMIT = 100;
 const PREVIEW_BUCKET = 'design-uploads';
 const WATERMARK_NAME = '__watermark';
@@ -289,11 +293,12 @@ function buildObjectsFromLayout(layout, request, bgHeight = CANVAS_H) {
       originY: 'center',
       width: Ctor === fabric.Textbox ? CANVAS_W * 0.8 : undefined,
       fontFamily: cleanFont,
-      fontSize: (item.size || 20) * heightScale,
+      fontSize: (item.size || 20) * heightScale * LAYOUT_TEXT_SCALE,
       fill: item.color || '#1a1a1a',
       textAlign: item.align || 'center',
       name: item.id || `text_${item.field || 'layer'}`,
     });
+    obj.__fromLayout = true;   // mark so we can fit-to-width these after fonts load
     initTextObjectMetadata(obj, item.field || 'layer');
     return obj;
   });
@@ -469,6 +474,21 @@ export function useFabricEditor({ request, onSaved }) {
           obj.setCoords();
         }
       });
+
+      // Fit template text to the canvas width: one uniform scale for all
+      // layout lines (keeps title/body proportions) so the widest line stays
+      // inside the card and nothing overflows the edges.
+      const laid = objects.filter((o) => o.__fromLayout && o.width);
+      let fitK = 1;
+      const availW = CANVAS_W * 0.9;
+      laid.forEach((o) => { if (o.width > availW) fitK = Math.min(fitK, availW / o.width); });
+      if (fitK < 1) {
+        laid.forEach((o) => {
+          o.set('fontSize', o.fontSize * fitK);
+          if (typeof o.initDimensions === 'function') o.initDimensions();
+          o.setCoords();
+        });
+      }
       canvas.requestRenderAll();
 
       if (request.couple_photo_url) {

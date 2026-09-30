@@ -1,9 +1,92 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import './Templates.css';
 
 const API_URL = 'http://localhost:8000';
+
+// Overall size of the preview text on the template cards. Lower = smaller text
+// with more margin. Keep this in sync with TemplatesPage.jsx.
+const CARD_TEXT_SCALE = 0.7;
+
+/**
+ * One template thumbnail with its editable-text preview overlaid. Each line is
+ * sized like the editor (size × frameHeight/1000) and then shrunk if it would be
+ * wider than the frame, so text fits inside the card without wrapping or
+ * overflowing — matching the original's proportions.
+ */
+function TplTextOverlay({ layout }) {
+  const frameRef = useRef(null);
+  const spanRefs = useRef({});
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => setDims({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const fitLines = () => {
+    const el = frameRef.current;
+    if (!el) return;
+    const W = el.clientWidth, H = el.clientHeight;
+    if (!W || !H) return;
+    const bases = {};
+    let k = 1;
+    const avail = W * 0.88;
+    layout.forEach((item, idx) => {
+      const span = spanRefs.current[idx];
+      if (!span) return;
+      const base = Math.max(4, (item.size || 20) * H / 1000 * CARD_TEXT_SCALE);
+      bases[idx] = base;
+      span.style.fontSize = base + 'px';
+      if (span.scrollWidth > avail) k = Math.min(k, avail / span.scrollWidth);
+    });
+    if (k < 1) {
+      layout.forEach((item, idx) => {
+        const span = spanRefs.current[idx];
+        if (span && bases[idx]) span.style.fontSize = (bases[idx] * k) + 'px';
+      });
+    }
+  };
+
+  useLayoutEffect(fitLines, [dims]);
+  useEffect(() => {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLines);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dims]);
+
+  return (
+    <div className="tpl-text-overlay" aria-hidden="true" ref={frameRef}>
+      {dims.h > 0 && layout
+        .filter((item) => item.sample && String(item.sample).trim())
+        .map((item, idx) => (
+          <span
+            key={item.id || idx}
+            ref={(el) => { spanRefs.current[idx] = el; }}
+            className="tpl-text-line"
+            style={{
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              fontFamily: item.font ? `'${item.font}', serif` : "'Playfair Display', serif",
+              color: item.color || '#2b2924',
+              textAlign: item.align || 'center',
+              fontWeight: item.font?.toLowerCase().includes('playfair') ? 700 : (item.size > 24 ? 600 : 500),
+              whiteSpace: 'nowrap',   // force one line (fit-to-width handles size)
+              maxWidth: 'none',
+              overflow: 'visible',
+            }}
+          >
+            {item.sample}
+          </span>
+        ))}
+    </div>
+  );
+}
 
 const CATEGORIES = [
   'All',
@@ -293,29 +376,7 @@ export default function Templates() {
 
                     {/* Complete Template Typography & Text Layer Preview */}
                     {Array.isArray(tpl.text_layout) && tpl.text_layout.length > 0 && (
-                      <div className="tpl-text-overlay" aria-hidden="true">
-                        {tpl.text_layout.map((item, idx) => (
-                          <span
-                            key={item.id || idx}
-                            className="tpl-text-line"
-                            style={{
-                              left: `${item.x}%`,
-                              top: `${item.y}%`,
-                              fontFamily: item.font ? `'${item.font}', serif` : "'Playfair Display', serif",
-                              fontSize: `calc(${item.size || 20}px * var(--tpl-scale, 0.35))`,
-                              color: item.color || '#2b2924',
-                              textAlign: item.align || 'center',
-                              fontWeight: item.font?.toLowerCase().includes('playfair')
-                                ? 700
-                                : item.size > 24
-                                ? 600
-                                : 500,
-                            }}
-                          >
-                            {item.sample}
-                          </span>
-                        ))}
-                      </div>
+                      <TplTextOverlay layout={tpl.text_layout} />
                     )}
 
                     <div className="tpl-overlay-hover">

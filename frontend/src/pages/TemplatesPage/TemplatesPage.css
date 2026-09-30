@@ -161,17 +161,6 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
 }
 
-.tpl-overlay-text {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  pointer-events: none;   /* clicks pass through to the card, not the text */
-  line-height: 1.2;
-  max-width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .tpl-image-wrap img {
   width: 100%;
   height: auto;
@@ -182,12 +171,13 @@
 .tpl-overlay-text {
   position: absolute;
   transform: translate(-50%, -50%);   /* centers the text ON the point, matching the Editor */
-  white-space: nowrap;
-  pointer-events: none;
-  line-height: 1.2;
-  max-width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;        /* WRAP the full text instead of clipping it to one line */
+  word-break: break-word;     /* wrap long single words too */
+  pointer-events: none;       /* clicks pass through to the card, not the text */
+  line-height: 1.15;
+  max-width: 92%;             /* stay inside the card; wraps within this width */
+  overflow: visible;          /* never clip -> no "..." truncation */
+  text-align: center;
 }
 
 

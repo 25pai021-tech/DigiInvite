@@ -222,7 +222,7 @@ function TemplateCard({ template, onCustomize }) {
         )}
 
         {Array.isArray(layout) && layout
-          .filter((item) => item.sample && item.sample.length <= 40)
+          .filter((item) => item.sample && item.sample.trim())
           .map((item) => (
             <span
               key={item.id}
@@ -231,7 +231,9 @@ function TemplateCard({ template, onCustomize }) {
                 left: `${item.x}%`,
                 top: `${item.y}%`,
                 fontFamily: item.font || 'Inter',
-                fontSize: `${Math.max(8, (item.size || 20) * 0.35)}px`,
+                // item.size is on the editor's 1000-tall reference; ~0.3 scales it
+                // to this small card while keeping the same title/body proportions
+                fontSize: `${Math.max(6, (item.size || 20) * 0.3)}px`,
                 color: item.color || '#1a1a1a',
                 textAlign: item.align || 'center',
               }}

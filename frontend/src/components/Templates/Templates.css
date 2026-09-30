@@ -171,11 +171,12 @@
 .tpl-text-line {
   position: absolute;
   transform: translate(-50%, -50%);
-  white-space: nowrap;
+  white-space: normal;        /* WRAP the full text instead of clipping to one line */
+  word-break: break-word;
   line-height: 1.15;
   max-width: 92%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;          /* never clip -> no "..." */
+  text-align: center;
   user-select: none;
   letter-spacing: normal;
   pointer-events: none;
@@ -369,4 +370,3 @@
     flex: 0 0 220px;
   }
 }
-

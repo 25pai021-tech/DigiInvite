@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
+import Pricing from '../pages/Pricing';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import CreateInvitation from '../pages/CreateInvitation/CreateInvitation';
 
@@ -20,6 +20,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/create-invitation" element={<CreateInvitation />} />
+      <Route path="/pricing" element={<Pricing />} />
       {/* Phase 12: <Route path="/admin" element={<AdminDashboard />} /> */}
     </Routes>
   );

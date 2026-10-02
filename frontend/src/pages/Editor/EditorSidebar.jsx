@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ICON_CATEGORIES } from './iconLibrary';
 import { SUPPORTED_LANGUAGES } from './languageService';
 
-const TABS = ['Text', 'Uploads', 'Shapes', 'Icons', 'Background', 'Templates', 'Stickers', 'Language'];
+const TABS = ['Text', 'Uploads', 'Shapes', 'Icons', 'Background',  'Stickers', 'Language'];
 const SWATCHES = ['#FFFFFF', '#F5F0FF', '#1a1035', '#0D0A1A', '#6C3BFF', '#D4AF37', '#22c55e', '#ef4444'];
 const GRADIENTS = [
   ['#6C3BFF', '#8B5CFF'],
@@ -139,24 +139,11 @@ export default function EditorSidebar({
               ))}
             </div>
 
-            <p className="editor-sidebar-hint" style={{ marginTop: 16 }}>Upload background image</p>
-            <button className="editor-sidebar-item" onClick={() => bgRef.current?.click()}>Upload image</button>
-            <input
-              ref={bgRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              hidden
-              onChange={(e) => e.target.files?.[0] && onSetBackgroundImageFile(e.target.files[0])}
-            />
+            
           </div>
         )}
 
-        {tab === 'Templates' && (
-          <p className="editor-sidebar-hint">
-            Template gallery is coming soon — for now, use the AI Generator to produce a new starting design,
-            or start from the current card and customize it here.
-          </p>
-        )}
+        
 
         {tab === 'Stickers' && (
           <p className="editor-sidebar-hint">

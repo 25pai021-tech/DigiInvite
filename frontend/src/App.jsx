@@ -16,7 +16,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 import Contact from './pages/Contact';
 import { Navigate } from 'react-router-dom';  
-
+import Pricing from './pages/Pricing';
 
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
@@ -61,7 +61,7 @@ export default function App() {
               <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
               <Route path="/editor" element={<Navigate to="/my-requests" replace />} />
               <Route path="/editor/:requestId" element={<Editor />} />
-              <Route path="/pricing"   element={<ComingSoon title="Pricing" />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/about"     element={<ComingSoon title="About Us" />} />
               <Route path="/contact"   element={<ComingSoon title="Contact" />} />
               <Route path="/admin/login" element={<AdminLogin />} />

@@ -1,11 +1,24 @@
 import React from 'react';
 import { AVAILABLE_FONTS, FONT_CATEGORIES, cleanFontName } from './fontManager';
 
-export default function TextToolbar({ object, onUpdate, onDuplicate, onDelete, onToggleLock, onBringForward, onSendBackward }) {
+export default function TextToolbar({ object, onUpdate, onDuplicate, onDelete, onToggleLock}) {
   if (!object) return null;
   const locked = !!object.locked;
   const currentFont = cleanFontName(object.fontFamily || 'Inter');
   const isKnown = AVAILABLE_FONTS.some((f) => f.name.toLowerCase() === currentFont.toLowerCase());
+  const CARD_W = 800;
+  const SIDE_MARGIN = 60;
+
+  // Single-line text is only as wide as its words, so textAlign alone shows
+  // no change. This moves the text to the left, center or right of the card.
+  const alignOnCard = (position) => {
+    const w = object.getScaledWidth ? object.getScaledWidth() : (object.width || 0);
+    let centerX = CARD_W / 2;
+    if (position === 'left') centerX = SIDE_MARGIN + w / 2;
+    if (position === 'right') centerX = CARD_W - SIDE_MARGIN - w / 2;
+    const left = object.originX === 'center' ? centerX : centerX - w / 2;
+    onUpdate({ textAlign: position, left });
+  };
 
   return (
     <div className="editor-floating-toolbar">
@@ -54,11 +67,10 @@ export default function TextToolbar({ object, onUpdate, onDuplicate, onDelete, o
       </div>
 
       <div className="editor-toolbar-group">
-        <button className={object.textAlign === 'left' ? 'active' : ''} onClick={() => onUpdate({ textAlign: 'left' })} title="Align left">⟸</button>
-        <button className={object.textAlign === 'center' ? 'active' : ''} onClick={() => onUpdate({ textAlign: 'center' })} title="Align center">≡</button>
-        <button className={object.textAlign === 'right' ? 'active' : ''} onClick={() => onUpdate({ textAlign: 'right' })} title="Align right">⟹</button>
-        <button className={object.textAlign === 'justify' ? 'active' : ''} onClick={() => onUpdate({ textAlign: 'justify' })} title="Justify">☰</button>
-      </div>
+        <button className={object.textAlign === 'left' ? 'active' : ''} onClick={() => alignOnCard('left')} title="Align left">⟸</button>
+        <button className={object.textAlign === 'center' ? 'active' : ''} onClick={() => alignOnCard('center')} title="Align center">≡</button>
+        <button className={object.textAlign === 'right' ? 'active' : ''} onClick={() => alignOnCard('right')} title="Align right">⟹</button>
+       </div>
 
       <div className="editor-toolbar-group">
         <button onClick={() => onUpdate({ text: (object.text || '').toUpperCase() })} title="Uppercase">AA</button>
@@ -92,8 +104,7 @@ export default function TextToolbar({ object, onUpdate, onDuplicate, onDelete, o
         <button onClick={onDuplicate} title="Duplicate">⧉</button>
         <button onClick={onDelete} title="Delete">🗑</button>
         <button className={locked ? 'active' : ''} onClick={onToggleLock} title={locked ? 'Unlock' : 'Lock'}>{locked ? '🔒' : '🔓'}</button>
-        <button onClick={onBringForward} title="Bring forward">▲</button>
-        <button onClick={onSendBackward} title="Send backward">▼</button>
+       
       </div>
     </div>
   );

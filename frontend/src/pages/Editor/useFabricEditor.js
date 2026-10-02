@@ -16,7 +16,8 @@ import {
   applyFontToTarget,
   cleanFontName,
 } from './fontManager';
-
+import { addMapQr } from './addMapQr';
+   
 const CANVAS_W = 800;
 const CANVAS_H = 1000;
 // Correction for the OCR-derived text sizes, which run larger than the original.
@@ -491,12 +492,14 @@ export function useFabricEditor({ request, onSaved }) {
       }
       canvas.requestRenderAll();
 
+      const afterPhoto = () => {
+        addMapQr(canvas, request.map_link || request.mapLink, bgHeight, finishLoad);
+      };
+
       if (request.couple_photo_url) {
-        addUploadedPhoto(canvas, request.couple_photo_url, bgHeight, () => {
-          finishLoad();
-        });
+        addUploadedPhoto(canvas, request.couple_photo_url, bgHeight, afterPhoto);
       } else {
-        finishLoad();
+        afterPhoto();
       }
     };
 

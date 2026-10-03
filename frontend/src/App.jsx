@@ -15,6 +15,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 import Contact from './pages/Contact';
+import PublicInvite from './pages/PublicInvite';
 import { Navigate } from 'react-router-dom';  
 
 
@@ -61,6 +62,7 @@ export default function App() {
               <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
               <Route path="/editor" element={<Navigate to="/my-requests" replace />} />
               <Route path="/editor/:requestId" element={<Editor />} />
+              <Route path="/invite/:slug" element={<PublicInvite />} />
               <Route path="/pricing"   element={<ComingSoon title="Pricing" />} />
               <Route path="/about"     element={<ComingSoon title="About Us" />} />
               <Route path="/contact"   element={<ComingSoon title="Contact" />} />

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Dashboard from '../pages/Dashboard/Dashboard';
 import CreateInvitation from '../pages/CreateInvitation/CreateInvitation';
+import PublicInvite from '../pages/PublicInvite';
 
 /**
  * Mount this inside a <BrowserRouter> in your app's entry point, e.g.:
@@ -20,6 +21,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/create-invitation" element={<CreateInvitation />} />
+      <Route path="/invite/:slug" element={<PublicInvite />} />
       {/* Phase 12: <Route path="/admin" element={<AdminDashboard />} /> */}
     </Routes>
   );

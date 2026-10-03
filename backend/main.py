@@ -13,8 +13,11 @@ import hmac
 import hashlib
 import base64
 
+import re
+import random
+import string
 from PIL import Image, ImageDraw, ImageFont
-from fastapi import FastAPI, Depends, HTTPException, Header, File, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, Header, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -175,6 +178,17 @@ class TranslateIn(BaseModel):
     texts: List[str]
     source_lang: Optional[str] = "en"
     target_lang: str
+
+
+class PublishInvitationIn(BaseModel):
+    request_id: str
+    custom_slug: Optional[str] = None
+
+
+class EventPhotoIn(BaseModel):
+    photo_url: str
+    caption: Optional[str] = None
+    uploaded_by: Optional[str] = "Guest"
 
 
 # ===================== CORE ENDPOINTS =====================
@@ -422,6 +436,229 @@ def upload_image(file: UploadFile = File(...)):
 
     url = supabase.storage.from_("images").get_public_url(path)
     return {"success": True, "path": path, "url": url}
+
+
+# ===================== PUBLISH INVITATION & PUBLIC MINI-WEBSITE =====================
+
+@app.post("/publishInvitation")
+def publish_invitation(body: PublishInvitationIn):
+    # Retrieve request
+    req = supabase.table("invitation_requests").select("*").eq("id", body.request_id).limit(1).execute()
+    if not req.data:
+        raise HTTPException(404, "Invitation not found")
+    row = req.data[0]
+
+    # Generate or sanitize slug
+    slug = (body.custom_slug or "").strip().lower()
+    if slug:
+        slug = re.sub(r'[^a-z0-9-]', '-', slug).strip('-')
+    if not slug:
+        base_name = row.get("event_name") or row.get("event_type") or "invite"
+        base_clean = re.sub(r'[^a-zA-Z0-9\s-]', '', base_name).strip().lower()
+        base_clean = re.sub(r'[\s_]+', '-', base_clean)[:30].rstrip('-') or "invite"
+        rand_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        slug = f"{base_clean}-{rand_suffix}"
+
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    # Update editor_state as a guarantee/fallback if columns don't exist yet
+    editor_state = row.get("editor_state") or {}
+    if isinstance(editor_state, str):
+        try:
+            editor_state = json.loads(editor_state)
+        except Exception:
+            editor_state = {}
+    elif not isinstance(editor_state, dict):
+        editor_state = {}
+
+    editor_state["publish_info"] = {
+        "public_slug": slug,
+        "published": True,
+        "published_at": now_iso
+    }
+
+    # Attempt to update dedicated columns and editor_state
+    try:
+        supabase.table("invitation_requests").update({
+            "public_slug": slug,
+            "published": True,
+            "published_at": now_iso,
+            "editor_state": editor_state
+        }).eq("id", body.request_id).execute()
+    except Exception as e:
+        print(f"[publish] Column update failed, updating editor_state only: {e}")
+        supabase.table("invitation_requests").update({
+            "editor_state": editor_state
+        }).eq("id", body.request_id).execute()
+
+    return {
+        "success": True,
+        "public_slug": slug,
+        "published": True,
+        "published_at": now_iso,
+        "request_id": body.request_id,
+        "public_url": f"/invite/{slug}"
+    }
+
+
+@app.get("/publicInvite/{slug}")
+def get_public_invite(slug: str):
+    clean_slug = slug.strip().lower()
+    inv = None
+
+    # 1. Try querying by dedicated column
+    try:
+        res = supabase.table("invitation_requests").select("*").eq("public_slug", clean_slug).execute()
+        if res.data:
+            inv = res.data[0]
+    except Exception as e:
+        print(f"[publicInvite] Column select error: {e}")
+
+    # 2. Fallback: inspect requests for publish_info in editor_state
+    if not inv:
+        try:
+            all_res = supabase.table("invitation_requests").select("*").execute()
+            for r in (all_res.data or []):
+                st = r.get("editor_state")
+                if isinstance(st, str):
+                    try:
+                        st = json.loads(st)
+                    except Exception:
+                        st = {}
+                if isinstance(st, dict):
+                    pinfo = st.get("publish_info", {})
+                    if pinfo.get("public_slug") == clean_slug:
+                        inv = r
+                        inv["published"] = pinfo.get("published", True)
+                        inv["published_at"] = pinfo.get("published_at")
+                        inv["public_slug"] = clean_slug
+                        break
+        except Exception as e:
+            print(f"[publicInvite] Fallback search error: {e}")
+
+    if not inv:
+        raise HTTPException(404, "Invitation not found")
+
+    is_published = inv.get("published")
+    if is_published is None:
+        st = inv.get("editor_state")
+        if isinstance(st, str):
+            try:
+                st = json.loads(st)
+            except Exception:
+                st = {}
+        if isinstance(st, dict):
+            is_published = st.get("publish_info", {}).get("published", False)
+
+    if not is_published:
+        raise HTTPException(403, "This invitation is not published yet")
+
+    # Fetch event photos
+    photos = []
+    try:
+        photo_res = supabase.table("event_photos").select("*").eq("invitation_id", inv["id"]).order("created_at", desc=True).execute()
+        photos = photo_res.data or []
+    except Exception as e:
+        print(f"[publicInvite] Photo table query error: {e}")
+        st = inv.get("editor_state")
+        if isinstance(st, str):
+            try:
+                st = json.loads(st)
+            except Exception:
+                st = {}
+        if isinstance(st, dict):
+            photos = st.get("event_photos", [])
+
+    return {
+        "success": True,
+        "invitation": inv,
+        "photos": photos
+    }
+
+
+@app.post("/publicInvite/{slug}/uploadPhoto")
+async def upload_event_photo(
+    slug: str,
+    file: UploadFile = File(...),
+    caption: Optional[str] = Form(None),
+    uploaded_by: Optional[str] = Form("Guest")
+):
+    clean_slug = slug.strip().lower()
+    inv_data = get_public_invite(clean_slug)
+    inv = inv_data["invitation"]
+    inv_id = inv["id"]
+
+    ext = (file.filename or "photo.jpg").split(".")[-1].lower()
+    if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
+        ext = "jpg"
+    filename = f"{inv_id}/{uuid.uuid4()}.{ext}"
+
+    content = await file.read()
+    content_type = file.content_type or f"image/{ext}"
+
+    bucket = "event-photos"
+    try:
+        supabase.storage.from_(bucket).upload(
+            filename,
+            content,
+            {"content-type": content_type, "upsert": "true"}
+        )
+    except Exception as e:
+        print(f"[photoUpload] bucket {bucket} failed: {e}, falling back to design-uploads")
+        bucket = "design-uploads"
+        supabase.storage.from_(bucket).upload(
+            filename,
+            content,
+            {"content-type": content_type, "upsert": "true"}
+        )
+
+    pub_url = supabase.storage.from_(bucket).get_public_url(filename)
+
+    photo_record = {
+        "invitation_id": inv_id,
+        "photo_url": pub_url,
+        "caption": caption or "",
+        "uploaded_by": uploaded_by or "Guest",
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    }
+
+    try:
+        db_res = supabase.table("event_photos").insert(photo_record).execute()
+        if db_res.data:
+            photo_record = db_res.data[0]
+    except Exception as e:
+        print(f"[photoUpload] Table insert failed, storing in editor_state: {e}")
+        st = inv.get("editor_state") or {}
+        if isinstance(st, str):
+            try:
+                st = json.loads(st)
+            except Exception:
+                st = {}
+        curr_photos = st.get("event_photos", [])
+        photo_record["id"] = str(uuid.uuid4())
+        curr_photos.insert(0, photo_record)
+        st["event_photos"] = curr_photos
+        supabase.table("invitation_requests").update({"editor_state": st}).eq("id", inv_id).execute()
+
+    return {"success": True, "photo": photo_record}
+
+
+@app.get("/publicInvite/{slug}/photos")
+def get_event_photos(slug: str):
+    clean_slug = slug.strip().lower()
+    inv_data = get_public_invite(clean_slug)
+    inv = inv_data["invitation"]
+    try:
+        photo_res = supabase.table("event_photos").select("*").eq("invitation_id", inv["id"]).order("created_at", desc=True).execute()
+        return {"photos": photo_res.data or []}
+    except Exception as e:
+        st = inv.get("editor_state")
+        if isinstance(st, str):
+            try:
+                st = json.loads(st)
+            except Exception:
+                st = {}
+        return {"photos": st.get("event_photos", []) if isinstance(st, dict) else []}
 
 
 # ===================== ADMIN ENDPOINTS =====================

@@ -12,6 +12,7 @@ import PropertiesPanel from './PropertiesPanel';
 import LayersPanel from './LayersPanel';
 import ContextMenu from './ContextMenu';
 import Rulers from './Rulers';
+import { publishInvitation, getWhatsAppShareUrl } from '../../lib/publishInvitation';
 import './editor.css';
 
 const API_URL = 'http://localhost:8000';
@@ -26,6 +27,9 @@ export default function Editor() {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   const [contextMenu, setContextMenu] = useState(null);
+  const [publishModal, setPublishModal] = useState(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const canvasWrapRef = useRef(null);
 
   useEffect(() => {
@@ -224,6 +228,42 @@ export default function Editor() {
     pdf?.save(`${(request.event_name || 'invitation').replace(/\s+/g, '-')}.pdf`);
   };
 
+  const handlePublish = async () => {
+    if (request.is_template) {
+      alert('Please click "Save Edits" first to save your invitation, then publish.');
+      return;
+    }
+    setIsPublishing(true);
+    try {
+      if (editor.isDirty) {
+        await editor.save();
+      }
+      const res = await publishInvitation(request.id);
+      const fullUrl = `${window.location.origin}${res.public_url}`;
+      setPublishModal({
+        slug: res.public_slug,
+        title: request.event_name || 'My Celebration',
+        url: fullUrl,
+      });
+      setRequest((prev) => ({
+        ...prev,
+        published: true,
+        public_slug: res.public_slug,
+        published_at: res.published_at,
+      }));
+    } catch (err) {
+      alert(err.message || 'Failed to publish invitation.');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleCopyLink = (url) => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleReorderLayer = (fromIdx, toIdx) => {
     if (fromIdx === toIdx) return;
     const fromLayer = editor.layers[fromIdx];
@@ -393,6 +433,15 @@ export default function Editor() {
           {editor.saveState === 'saving' ? 'Saving…' : 'Save Edits'}
         </button>
 
+        <button
+          className="editor-btn"
+          style={{ background: '#7a1030', color: '#fff' }}
+          disabled={isPublishing}
+          onClick={handlePublish}
+        >
+          {isPublishing ? 'Publishing…' : (request.published || request.editor_state?.publish_info?.published) ? 'Publish / Share Details' : 'Publish Invitation'}
+        </button>
+
         {isPaid ? (
           <div className="editor-toolbar-group">
             <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
@@ -406,6 +455,151 @@ export default function Editor() {
           </button>
         )}
       </div>
+
+      {/* Publish Result Modal */}
+      {publishModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 20,
+          }}
+          onClick={() => setPublishModal(null)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 20,
+              padding: '32px 28px',
+              maxWidth: 480,
+              width: '100%',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+              border: '1px solid #f3e8eb',
+              color: '#2c2523',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🎉</div>
+              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, margin: '0 0 6px', color: '#7a1030' }}>
+                Invitation is Live!
+              </h2>
+              <p style={{ color: '#666', fontSize: 14, margin: 0 }}>
+                Your smart adaptive mini-website is created and ready to share.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', textTransform: 'uppercase' }}>
+                Public Website Link
+              </label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={publishModal.url}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: '1px solid #d1d5db',
+                    fontSize: 14,
+                    background: '#f9fafb',
+                  }}
+                  onClick={(e) => e.target.select()}
+                />
+                <button
+                  onClick={() => handleCopyLink(publishModal.url)}
+                  style={{
+                    background: copied ? '#16a34a' : '#7a1030',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '10px 18px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {copied ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20 }}>
+              <a
+                href={getWhatsAppShareUrl(publishModal.title, publishModal.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#25d366',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                  flex: 1,
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                💬 Share on WhatsApp
+              </a>
+
+              <a
+                href={publishModal.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                  flex: 1,
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                🔗 Open Live Page
+              </a>
+            </div>
+
+            <button
+              onClick={() => setPublishModal(null)}
+              style={{
+                background: '#e5e7eb',
+                color: '#333',
+                border: 'none',
+                padding: '10px 18px',
+                borderRadius: 10,
+                width: '100%',
+                marginTop: 12,
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
 
       {editor.saveState === 'error' && editor.saveError && (
         <p className="editor-save-error">⚠ {editor.saveError}</p>

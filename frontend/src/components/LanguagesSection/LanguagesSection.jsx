@@ -6,62 +6,62 @@ const LANGUAGES = [
   {
     id: 'hindi',
     name: 'हिन्दी (Hindi)',
-    tagline: 'शुभ विवाह एवं उत्सव पत्रिका',
+    tagline: 'शुभ विवाह निमंत्रण',
     header: '॥ श्री गणेशाय नमः ॥',
-    names: 'आयुष्मान् आदित्य संग आयुष्मती रिया',
-    event: 'के पावन परिणय संस्कार में आपका सस्नेह निमंत्रण',
-    date: 'शनिवार, १८ दिसम्बर २०२६ · उदयपुर',
-    motifs: 'ॐ · स्वास्तिक · कलश',
+    names: 'आरव एवं मीरा',
+    event: 'अपने परिवारजनों सहित आपको अपने विवाह समारोह में पधारने का सादर निमंत्रण देते हैं',
+    date: 'शुक्रवार, १८ दिसम्बर २०२६ · लेक पैलेस, उदयपुर',
+    motifs: 'ॐ · स्वस्तिक · कलश',
   },
   {
     id: 'gujarati',
     name: 'ગુજરાતી (Gujarati)',
-    tagline: 'રૂડી કંકોતરી અને લગ્ન ઉત્સવ',
+    tagline: 'રૂડી કંકોતરી · લગ્ન નિમંત્રણ',
     header: '॥ શ્રી ગણેશાય નમઃ ॥',
-    names: 'ચિ. ચિરાગ સંગ ચિ. પ્રાચી',
-    event: 'ના શુભ લગ્ન પ્રસંગે પધારવા હાર્દિક નિમંત્રણ',
-    date: 'રવિવાર, ૨૪ જાન્યુઆરી ૨૦૨૭ · અમદાવાદ',
-    motifs: 'શ્રી ગણેશ · સાથિયો',
+    names: 'આરવ અને મીરા',
+    event: 'પોતાના પરિવાર સાથે આપને તેમના લગ્ન સમારોહમાં પધારવા સાદર આમંત્રણ પાઠવે છે',
+    date: 'શુક્રવાર, ૧૮ ડિસેમ્બર ૨૦૨૬ · લેક પેલેસ, ઉદયપુર',
+    motifs: 'ૐ · સાથિયો · કળશ',
   },
   {
     id: 'tamil',
     name: 'தமிழ் (Tamil)',
-    tagline: 'பாரம்பரிய திருமண அழைப்பிதழ்',
+    tagline: 'திருமண அழைப்பிதழ்',
     header: '|| ஓம் கணேசாய நமஹ ||',
-    names: 'கார்த்திக் மற்றும் அனன்யா',
-    event: 'திருமண விழாவிற்கு தங்களை அன்போடு அழைக்கின்றோம்',
-    date: 'ஞாயிறு, 14 பிப்ரவரி 2027 · சென்னை',
-    motifs: 'மங்கள வாத்தியம் · தீபம்',
+    names: 'ஆரவ் மற்றும் மீரா',
+    event: 'தங்கள் குடும்பத்தினருடன் இணைந்து, தங்களை அவர்களின் திருமண விழாவிற்கு அன்புடன் அழைக்கின்றனர்',
+    date: 'வெள்ளிக்கிழமை, 18 டிசம்பர் 2026 · லேக் பேலஸ், உதய்ப்பூர்',
+    motifs: 'ஓம் · ஸ்வஸ்திகம் · கலசம்',
   },
   {
     id: 'telugu',
     name: 'తెలుగు (Telugu)',
-    tagline: 'శుభలేఖ & వివాహ ఆహ్వాన పత్రిక',
-    header: '|| శ్రీ రస్తు - శుభమస్తు ||',
-    names: 'చి. సౌ. రాహుల్ మరియు చి. లావణ్య',
-    event: 'వివాహ మహోత్సవమునకు మిమ్ములను సకుటుంబంగా ఆహ్వానిస్తున్నాము',
-    date: 'ఆదివారం, 28 నవంబర్ 2026 · హైదరాబాద్',
-    motifs: 'కలశం · అక్షతలు',
+    tagline: 'శుభలేఖ · వివాహ ఆహ్వాన పత్రిక',
+    header: '|| శ్రీ గణేశాయ నమః ||',
+    names: 'ఆరవ్ మరియు మీరా',
+    event: 'తమ కుటుంబ సభ్యులతో కలిసి, తమ వివాహ వేడుకకు మిమ్మల్ని సాదరంగా ఆహ్వానిస్తున్నారు',
+    date: 'శుక్రవారం, 18 డిసెంబర్ 2026 · లేక్ ప్యాలెస్, ఉదయపూర్',
+    motifs: 'ఓం · స్వస్తిక్ · కలశం',
   },
   {
     id: 'marathi',
     name: 'मराठी (Marathi)',
-    tagline: 'लग्नपत्रिका आणि सस्नेह निमंत्रण',
-    header: '॥ श्री कुलदैवत प्रसन्न ॥',
-    names: 'चि. संकेत आणि चि.सौ.कां. तन्वी',
-    event: 'यांच्या शुभविवाह सोहळ्यास सहकुटुंब सहपरिवार उपस्थित राहावे',
-    date: 'शुक्रवार, ५ डिसेंबर २०२६ · पुणे',
-    motifs: 'तुतारी · अक्षता · कलश',
+    tagline: 'लग्नपत्रिका · सस्नेह निमंत्रण',
+    header: '॥ श्री गणेशाय नमः ॥',
+    names: 'आरव आणि मीरा',
+    event: 'आपल्या कुटुंबीयांसह आपणास त्यांच्या विवाह सोहळ्यास उपस्थित राहण्याचे सादर निमंत्रण देत आहेत',
+    date: 'शुक्रवार, १८ डिसेंबर २०२६ · लेक पॅलेस, उदयपूर',
+    motifs: 'ॐ · स्वस्तिक · कलश',
   },
   {
     id: 'english',
-    name: 'English (Bilingual)',
-    tagline: 'Modern & Traditional English',
-    header: '✦ TOGETHER WITH THEIR FAMILIES ✦',
+    name: 'English',
+    tagline: 'Wedding Invitation',
+    header: '✦ SHREE GANESHAY NAMAH ✦',
     names: 'Aarav & Meera',
-    event: 'Cordially invite you to celebrate their auspicious wedding',
-    date: 'Saturday, December 18, 2026 · Lake Palace, Udaipur',
-    motifs: 'Royal Crest · Gold Foil Border',
+    event: 'Together with their families, request the pleasure of your company at their wedding',
+    date: 'Friday, December 18, 2026 · Lake Palace, Udaipur',
+    motifs: 'Om · Swastik · Kalash',
   },
 ];
 
@@ -97,8 +97,10 @@ export default function LanguagesSection() {
         </div>
 
         {/* Live Multilingual Card Showcase */}
-        <div className="lang-showcase-box">
-          <div className="lang-preview-card">
+        <div
+        className="lang-showcase-box"
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div className="lang-preview-card"  style={{ margin: '0 auto' }}>
             <div className="lang-card-gold-border" />
             
             <div className="lang-card-header">
@@ -115,37 +117,11 @@ export default function LanguagesSection() {
 
             <div className="lang-card-footer">
               <span className="lang-motif-badge">✦ {selectedLang.motifs}</span>
-              <span className="lang-ai-badge">AI Regional Phrasing Verified</span>
+              <span className="lang-ai-badge">Traditional Wedding Phrasing</span>
             </div>
           </div>
 
-          <div className="lang-info-panel">
-            <h3 className="info-panel-title">Authentic Phrasing &amp; Typographic Elegance</h3>
-            <p className="info-panel-desc">
-              Never worry about spelling mistakes in complex Shlokas or regional scripts. Our language engine automatically recommends traditional opening invocations, auspicious colors, and appropriate family salutations.
-            </p>
-
-            <ul className="lang-feature-list">
-              <li>
-                <span className="check-bullet">✓</span>
-                <span><strong>Bilingual Side-by-Side:</strong> Create English + Regional language dual-page invites.</span>
-              </li>
-              <li>
-                <span className="check-bullet">✓</span>
-                <span><strong>Authentic Script Rendering:</strong> Devnagari, Dravidian, and Indo-Aryan font sets.</span>
-              </li>
-              <li>
-                <span className="check-bullet">✓</span>
-                <span><strong>WhatsApp &amp; PDF Compatibility:</strong> Flawless rendering on all phones and print formats.</span>
-              </li>
-            </ul>
-
-            <div className="lang-action-wrap">
-              <Link to="/create-invitation" className="btn-primary">
-                ✦ Create in Your Language →
-              </Link>
-            </div>
-          </div>
+          
         </div>
       </div>
     </section>

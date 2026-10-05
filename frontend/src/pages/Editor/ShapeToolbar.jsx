@@ -74,8 +74,7 @@ export default function ShapeToolbar({
         <button onClick={onDuplicate} title="Duplicate">⧉</button>
         <button onClick={onDelete} title="Delete">🗑</button>
         <button className={locked ? 'active' : ''} onClick={onToggleLock} title={locked ? 'Unlock' : 'Lock'}>{locked ? '🔒' : '🔓'}</button>
-        <button onClick={onBringForward} title="Bring forward">▲</button>
-        <button onClick={onSendBackward} title="Send backward">▼</button>
+        
       </div>
     </div>
   );

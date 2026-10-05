@@ -1,0 +1,656 @@
+/* Smart Adaptive Public Mini-Website Styles */
+
+.public-invite-root {
+  min-height: 100vh;
+  background: #fdfbf7;
+  color: #2c2523;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+/* Header & Banner */
+.public-invite-banner {
+  background: linear-gradient(135deg, #7a1030 0%, #4a081a 100%);
+  color: #fff;
+  padding: 48px 20px 36px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(122, 16, 48, 0.2);
+}
+
+.public-invite-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.today-pulse {
+  background: #f59e0b;
+  color: #78350f;
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+}
+
+.public-invite-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  margin: 0 0 8px;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.public-invite-subtitle {
+  font-size: 1.1rem;
+  color: #fce7f3;
+  margin: 0 0 20px;
+  font-weight: 400;
+}
+
+/* Quick Action Bar */
+.public-invite-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.btn-whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
+
+.btn-whatsapp:hover {
+  background: #20ba59;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.45);
+}
+
+.btn-directions {
+  background: #ffffff;
+  color: #7a1030;
+  border: 1px solid #7a1030;
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-directions:hover {
+  background: #fdf2f4;
+  transform: translateY(-2px);
+}
+
+/* Main Container */
+.public-invite-container {
+  max-width: 960px;
+  margin: -24px auto 0;
+  padding: 0 16px;
+  position: relative;
+  z-index: 10;
+}
+
+/* State Switcher (Demo / Testing bar) */
+.state-switcher-pill {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.switcher-box {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.switcher-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switcher-btn.active {
+  background: #7a1030;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(122, 16, 48, 0.3);
+}
+
+/* Countdown Card */
+.countdown-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3e8eb;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.countdown-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a1030;
+  margin-bottom: 16px;
+}
+
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.countdown-item {
+  background: #fdf2f4;
+  border-radius: 12px;
+  padding: 12px 8px;
+  border: 1px solid #fce7eb;
+}
+
+.countdown-number {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  font-weight: 700;
+  color: #7a1030;
+  line-height: 1;
+}
+
+.countdown-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #831843;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* Today is the Day Banner */
+.today-celebration-card {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.15);
+}
+
+.today-celebration-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 10px;
+}
+
+.today-celebration-text {
+  font-size: 1.05rem;
+  color: #78350f;
+  margin: 0 0 18px;
+}
+
+/* Card Showcase */
+.card-showcase-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 768px) {
+  .card-showcase-grid {
+    grid-template-columns: 1.1fr 1fr;
+    align-items: start;
+  }
+}
+
+.invitation-image-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f3e8eb;
+  text-align: center;
+}
+
+.invitation-img {
+  width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 0.25s;
+}
+
+.invitation-img:hover {
+  transform: scale(1.015);
+}
+
+/* Details Card */
+.event-details-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3e8eb;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #fdf2f4;
+  color: #7a1030;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detail-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.detail-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2c2523;
+  line-height: 1.4;
+}
+
+.special-message-box {
+  background: #faf5f6;
+  border-left: 4px solid #7a1030;
+  padding: 14px 18px;
+  border-radius: 0 12px 12px 0;
+  margin-top: 20px;
+  font-style: italic;
+  color: #555;
+}
+
+/* Schedule Timeline */
+.timeline-section {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3e8eb;
+  margin-bottom: 32px;
+}
+
+.timeline-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.6rem;
+  color: #7a1030;
+  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeline-list {
+  position: relative;
+  padding-left: 24px;
+  border-left: 2px dashed #fce7eb;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -31px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #7a1030;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #fce7eb;
+}
+
+.timeline-time {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #7a1030;
+  margin-bottom: 2px;
+}
+
+.timeline-event-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2c2523;
+}
+
+.timeline-desc {
+  font-size: 0.88rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Memories & Photo Gallery */
+.memories-header-card {
+  background: linear-gradient(135deg, #fdf2f4 0%, #fef3c7 100%);
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 28px;
+  border: 1px solid #fce7eb;
+}
+
+.memories-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: #7a1030;
+  margin: 0 0 8px;
+}
+
+.memories-subtitle {
+  font-size: 1.05rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Photo Upload Box */
+.photo-upload-card {
+  background: #ffffff;
+  border: 2px dashed #d1d5db;
+  border-radius: 20px;
+  padding: 32px 20px;
+  text-align: center;
+  margin-bottom: 32px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.photo-upload-card.dragging {
+  border-color: #7a1030;
+  background: #fdf2f4;
+}
+
+.upload-icon {
+  width: 52px;
+  height: 52px;
+  color: #7a1030;
+  margin: 0 auto 12px;
+}
+
+.upload-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #2c2523;
+}
+
+.upload-hint {
+  font-size: 0.88rem;
+  color: #777;
+  margin-bottom: 18px;
+}
+
+.upload-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto 16px;
+  text-align: left;
+}
+
+@media (min-width: 500px) {
+  .upload-fields-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.upload-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.upload-input:focus {
+  outline: none;
+  border-color: #7a1030;
+  box-shadow: 0 0 0 3px rgba(122, 16, 48, 0.1);
+}
+
+.btn-upload-submit {
+  background: #7a1030;
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(122, 16, 48, 0.25);
+}
+
+.btn-upload-submit:hover:not(:disabled) {
+  background: #600c25;
+  transform: translateY(-1px);
+}
+
+.btn-upload-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Gallery Grid */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.gallery-item {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3e8eb;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.gallery-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-info {
+  padding: 12px 14px;
+}
+
+.gallery-caption {
+  font-size: 0.9rem;
+  color: #2c2523;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.gallery-meta {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+/* Lightbox Modal */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.lightbox-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+  text-align: center;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.lightbox-caption {
+  color: #fff;
+  margin-top: 12px;
+  font-size: 1rem;
+}
+
+/* Empty State */
+.gallery-empty {
+  text-align: center;
+  padding: 48px 20px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px dashed #d1d5db;
+  color: #777;
+}
+
+/* Invalid / Unpublished Screen */
+.public-invite-error-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  background: #fdfbf7;
+}
+
+.error-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px 32px;
+  max-width: 480px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f3e8eb;
+}
+
+.error-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+}
+
+.error-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.8rem;
+  color: #7a1030;
+  margin: 0 0 10px;
+}
+
+.error-desc {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}

@@ -3,7 +3,7 @@ import { startFromTemplate } from '../../lib/startFromTemplate';
 import { useNavigate } from 'react-router-dom';
 import './TemplatesPage.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Overall size of the preview text on the template cards. Lower = smaller text
 // with more margin around it. This is the single knob to tune the look.

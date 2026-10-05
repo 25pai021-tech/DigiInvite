@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+
+import { fixSpelling } from './spellFix';
 const BUCKET = 'design-uploads';
 
 /**
@@ -89,6 +91,9 @@ export async function submitInvitationRequest({ eventType, details, design, temp
         couple_photo_url: couplePhotoUrl,
         reference_image_urls: referenceImageUrls,
         status: 'Pending',
+        event_name: fixSpelling(details.eventName),
+        host_name: fixSpelling(details.hostName),
+        special_message: fixSpelling(details.specialMessage) || null,
       },
     ])
     .select()

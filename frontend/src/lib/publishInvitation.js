@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
  * Publishes an existing invitation by ID.

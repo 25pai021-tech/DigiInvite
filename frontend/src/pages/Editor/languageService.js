@@ -3,7 +3,7 @@
  * for the DigiInvite Multilingual Editor.
  */
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const SUPPORTED_LANGUAGES = [
   { id: 'en', name: 'English', nativeName: 'English', script: 'Latin' },

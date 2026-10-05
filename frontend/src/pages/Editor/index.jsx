@@ -15,7 +15,7 @@ import Rulers from './Rulers';
 import { publishInvitation, getWhatsAppShareUrl } from '../../lib/publishInvitation';
 import './editor.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const TEXT_TYPES = ['i-text', 'textbox', 'text'];
 
 export default function Editor() {

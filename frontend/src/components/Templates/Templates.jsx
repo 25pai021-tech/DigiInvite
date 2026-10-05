@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import './Templates.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Overall size of the preview text on the template cards. Lower = smaller text
 // with more margin. Keep this in sync with TemplatesPage.jsx.

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const STATUS_COLORS = {
   'Pending': '#9ca3af',

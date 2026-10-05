@@ -108,9 +108,16 @@ def draw_details_on_card(image, row):
 
 app = FastAPI(title="DigiInvite API")
 
+# Allowed browser origins. Local dev defaults are always included; add your
+# deployed frontend URL(s) via the FRONTEND_ORIGINS env var (comma-separated),
+# e.g.  FRONTEND_ORIGINS=https://digiinvite.vercel.app
+_default_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+_env_origins = [o.strip() for o in os.getenv("FRONTEND_ORIGINS", "").split(",") if o.strip()]
+ALLOWED_ORIGINS = _default_origins + _env_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

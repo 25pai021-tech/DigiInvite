@@ -6,15 +6,15 @@ const LINKS = {
     { label: 'Features',         to: '/#features'   },
     { label: 'Template Gallery', to: '/templates'    },
     { label: 'Pricing',          to: '/pricing'      },
-    { label: 'RSVP System',      to: '/#features'   },
     { label: 'QR Code Generator',to: '/#features'   },
   ],
   Events: [
     { label: 'Wedding Invitations', to: '/templates?cat=Wedding'    },
     { label: 'Birthday Cards',      to: '/templates?cat=Birthday'   },
     { label: 'Engagement',          to: '/templates?cat=Engagement' },
-    { label: 'Baby Shower',         to: '/templates'                },
+    { label: 'Graduation',    to: '/templates?cat=Graduation'  },
     { label: 'Corporate Events',    to: '/templates?cat=Corporate'  },
+
   ],
   Company: [
     { label: 'About Us',        to: '/about'   },

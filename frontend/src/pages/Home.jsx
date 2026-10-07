@@ -7,7 +7,7 @@ import Templates from '../components/Templates/Templates';
 /*import InvitationPreviewExperience from '../components/InvitationPreviewExperience/InvitationPreviewExperience';*/
 import LanguagesSection from '../components/LanguagesSection/LanguagesSection';
 /*import PricingSection from '../components/PricingSection/PricingSection';*/
-import FAQ from '../components/FAQ/FAQ';
+
 /*import CTASection from '../components/CTASection/CTASection';*/
 
 export default function Home() {
@@ -28,8 +28,7 @@ export default function Home() {
       {/* 5. Multilingual & Cultural Heritage Showcase */}
       <LanguagesSection />
 
-      {/* 7. Interactive FAQ Accordion */}
-      <FAQ />
+      
 
       
     </div>

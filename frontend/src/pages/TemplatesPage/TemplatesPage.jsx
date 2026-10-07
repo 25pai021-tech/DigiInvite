@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { startFromTemplate } from '../../lib/startFromTemplate';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import './TemplatesPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -46,8 +46,15 @@ function getThumb(tpl) {
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [status, setStatus] = useState('loading'); // loading | error | ready
-  const [expanded, setExpanded] = useState(null); // category key currently in "See All" mode
+  const [searchParams] = useSearchParams();
+  const catParam = (searchParams.get('cat') || '').toLowerCase();
+  const [expanded, setExpanded] = useState(catParam || null); // category key currently in "See All" mode
   const navigate = useNavigate();
+
+  // When the footer link changes (e.g. Wedding -> Birthday) while already on this page
+  useEffect(() => {
+    setExpanded(catParam || null);
+  }, [catParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -121,7 +128,10 @@ export default function TemplatesPage() {
 
       {status === 'ready' && categories.length > 0 && (
         <div className="tp-sections">
-          {(expanded ? categories.filter((c) => c.key === expanded) : categories).map((cat) => (
+          {(expanded && categories.some((c) => c.key === expanded)
+            ? categories.filter((c) => c.key === expanded)
+            : categories
+          ).map((cat) => (
             <CategorySection
               key={cat.key}
               category={cat}

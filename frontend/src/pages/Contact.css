@@ -33,6 +33,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
+  display: flex;
   justify-content: center;
   max-width: 900px;
   margin: 0 auto;

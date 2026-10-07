@@ -18,7 +18,7 @@ import Contact from './pages/Contact';
 import PublicInvite from './pages/PublicInvite';
 import { Navigate } from 'react-router-dom';  
 import Pricing from './pages/Pricing';
-
+import About from './pages/About';
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
   return (
@@ -63,8 +63,8 @@ export default function App() {
               <Route path="/editor" element={<Navigate to="/my-requests" replace />} />
               <Route path="/editor/:requestId" element={<Editor />} />
               <Route path="/pricing"   element={<Pricing />} />
-              <Route path="/about"     element={<ComingSoon title="About Us" />} />
-              <Route path="/contact"   element={<ComingSoon title="Contact" />} />
+              <Route path="/about"     element={<About />} />
+              <Route path="/contact"   element={<Contact />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<ProtectedAdminRoute> <AdminDashboard /> </ProtectedAdminRoute>}/>
               <Route path="*"          element={<ComingSoon title="Page Not Found" />} />

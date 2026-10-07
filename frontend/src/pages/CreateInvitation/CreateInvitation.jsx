@@ -12,7 +12,7 @@ import Button from '../../components/Shared/Button';
 import Card from '../../components/Shared/Card';
 import { submitInvitationRequest } from '../../lib/submitInvitationRequest';
 
-import '../../styles/createInvitation.css';
+import '../../Styles/createInvitation.css';
 import './CreateInvitation.css';
 
 const EMPTY_DETAILS = {

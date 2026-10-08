@@ -94,70 +94,54 @@ export async function publishInvitation(requestId, customSlug = null) {
 
 /**
  * Loads a published invitation by public slug.
+ * PRIMARY path: backend API (uses service key, bypasses RLS — always works).
+ * Fallback: direct Supabase query by public_slug column (requires migration to be run).
  */
 export async function getPublicInvite(slug) {
   const cleanSlug = (slug || '').trim().toLowerCase();
 
-  // 1. Try backend API
+  // 1. PRIMARY: backend API (service key bypasses RLS)
   try {
     const res = await fetch(`${API_URL}/publicInvite/${encodeURIComponent(cleanSlug)}`);
     if (res.ok) {
       const data = await res.json();
       return data;
     }
-    if (res.status === 404 || res.status === 403) {
-      const errData = await res.json();
-      throw new Error(errData.detail || 'Invitation not found or unpublished');
-    }
+    // Backend explicitly says not found/unpublished — don't fall through
+    const errText = await res.text();
+    let detail = 'Invitation not found or not published.';
+    try { detail = JSON.parse(errText).detail || detail; } catch { /* use default */ }
+    throw new Error(detail);
   } catch (err) {
-    if (err.message && (err.message.includes('not found') || err.message.includes('not published'))) {
+    // If the error came from our throw above, re-throw
+    if (!(err instanceof TypeError)) {
       throw err;
     }
-    console.warn('Backend fetch failed, trying direct Supabase lookup:', err);
+    // TypeError = network error (backend not running) — try Supabase fallback
+    console.warn('Backend unreachable, trying direct Supabase query:', err.message);
   }
 
-  // 2. Direct Supabase fallback
+  // 2. FALLBACK: direct Supabase query by public_slug column (requires migration)
   let inv = null;
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('invitation_requests')
       .select('*')
       .eq('public_slug', cleanSlug)
+      .eq('published', true)
       .maybeSingle();
-    if (data) inv = data;
+    if (!error && data) inv = data;
   } catch (err) {
-    console.warn('Query by public_slug column failed:', err);
+    console.warn('Direct Supabase query failed:', err);
   }
 
   if (!inv) {
-    const { data: allRows } = await supabase
-      .from('invitation_requests')
-      .select('*');
-    for (const r of allRows || []) {
-      let st = r.editor_state;
-      if (typeof st === 'string') {
-        try { st = JSON.parse(st); } catch { st = {}; }
-      }
-      if (st?.publish_info?.public_slug === cleanSlug) {
-        inv = r;
-        inv.published = st.publish_info.published;
-        inv.published_at = st.publish_info.published_at;
-        inv.public_slug = cleanSlug;
-        break;
-      }
-    }
+    throw new Error(
+      'Could not load invitation. Please ensure the backend is running or the Supabase migration has been applied.'
+    );
   }
 
-  if (!inv) {
-    throw new Error('Invitation not found.');
-  }
-
-  const isPublished = inv.published ?? inv.editor_state?.publish_info?.published;
-  if (!isPublished) {
-    throw new Error('This invitation has not been published yet.');
-  }
-
-  // Load photos
+  // Load photos from Supabase
   let photos = [];
   try {
     const { data: dbPhotos } = await supabase
@@ -167,7 +151,7 @@ export async function getPublicInvite(slug) {
       .order('created_at', { ascending: false });
     if (dbPhotos) photos = dbPhotos;
   } catch {
-    photos = inv.editor_state?.event_photos || [];
+    photos = [];
   }
 
   return { success: true, invitation: inv, photos };

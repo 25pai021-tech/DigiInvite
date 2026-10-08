@@ -43,6 +43,89 @@ function getThumb(tpl) {
   return tpl.thumbnail_url || tpl.config?.full_image_url || tpl.image_url || '';
 }
 
+// ───────── Fuzzy search (tolerant of spelling mistakes, no dependency) ─────────
+
+// Levenshtein edit distance between two short strings.
+function _lev(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+// How many typos we forgive, based on the length of the typed word.
+function _tol(len) {
+  return len <= 3 ? 0 : len <= 5 ? 1 : len <= 8 ? 2 : 3;
+}
+// Split a string into unique lowercase words.
+function _tokens(s) {
+  return Array.from(new Set(String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)));
+}
+// Fields we search, with how much each one counts toward relevance.
+// event_type matters most (that's what "birthday" really means), sample text least.
+const FIELD_WEIGHTS = { event: 3.0, theme: 2.0, name: 2.0, sample: 1.0 };
+
+// How well one typed word matches one template word: 0 = no match, 1 = perfect.
+// NOTE: we never let a tiny template word (like "a"/"of") match a long query —
+// that was the old bug that pulled in unrelated templates.
+function wordMatchQuality(qw, w) {
+  if (!qw || !w) return 0;
+  if (qw === w) return 1;                                       // exact
+  if (qw.length >= 3 && w.startsWith(qw)) return 0.9;           // "birth" → "birthday"
+  if (w.length >= 4 && qw.startsWith(w)) return 0.75;           // "weddings" → "wedding"
+  if (qw.length >= 4 && w.includes(qw)) return 0.7;             // contained, long enough
+  if (w.length >= 4 && qw.includes(w)) return 0.65;
+  if (qw.length >= 3 && w.length >= 3) {                        // close spelling (typos)
+    const tol = _tol(qw.length);
+    const d = _lev(qw, w);
+    if (d <= tol) return 0.85 - 0.12 * d;                       // "brithday" → "birthday"
+    if (w.length > qw.length && _lev(qw, w.slice(0, qw.length)) <= tol) return 0.6; // "annivers" → "anniversary"
+  }
+  return 0;
+}
+
+// Precompute the weighted word-groups we search for one template.
+function templateFields(tpl) {
+  const groups = [
+    { weight: FIELD_WEIGHTS.event, words: _tokens(tpl.event_type) },
+    { weight: FIELD_WEIGHTS.theme, words: _tokens(tpl.theme) },
+    { weight: FIELD_WEIGHTS.name,  words: _tokens(tpl.name) },
+  ];
+  if (Array.isArray(tpl.text_layout)) {
+    const sample = tpl.text_layout.map((it) => (it && it.sample) || '').join(' ');
+    groups.push({ weight: FIELD_WEIGHTS.sample, words: _tokens(sample) });
+  }
+  return groups.filter((g) => g.words.length);
+}
+
+// Relevance score for a template. 0 means "not related" (so it is never shown).
+// Every typed word must hit something, which is what keeps wedding cards out of a
+// "birthday" search. Higher score = more relevant = shown first.
+function scoreTemplate(qWords, groups) {
+  let total = 0;
+  for (const qw of qWords) {
+    let best = 0;
+    for (const g of groups) {
+      for (const w of g.words) {
+        const q = wordMatchQuality(qw, w) * g.weight;
+        if (q > best) best = q;
+      }
+    }
+    if (best === 0) return 0;   // a typed word matched nothing → not related
+    total += best;
+  }
+  return total;
+}
+
+
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [status, setStatus] = useState('loading'); // loading | error | ready
@@ -86,7 +169,27 @@ export default function TemplatesPage() {
     return Array.from(groups.values()).sort((a, b) => a.order - b.order);
   }, [templates]);
 
-  
+  // ----- Search -----
+   // ----- Search -----
+  const [query, setQuery] = useState('');
+  // precompute each template's weighted search fields once
+  const withFields = useMemo(
+    () => templates.map((t) => ({ t, groups: templateFields(t) })),
+    [templates]
+  );
+  // ranked results: most relevant first, unrelated templates dropped entirely
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const qWords = q.split(/\s+/).filter(Boolean);
+    return withFields
+      .map((x) => ({ t: x.t, score: scoreTemplate(qWords, x.groups) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.t);
+  }, [query, withFields]);
+  const searching = query.trim().length > 0;
+
   const [starting, setStarting] = useState(false);
 
   const handleCustomize = async (tpl) => {
@@ -109,6 +212,27 @@ export default function TemplatesPage() {
         <p className="tp-sub">
           Choose from hundreds of unique designs for your special occasion.
         </p>
+
+        <div className="tp-search">
+          <span className="tp-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="text"
+            className="tp-search-input"
+            placeholder="Search templates — wedding, birthday, diwali…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search templates"
+          />
+          {query && (
+            <button
+              className="tp-search-clear"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {status === 'loading' && (
@@ -122,11 +246,45 @@ export default function TemplatesPage() {
         </div>
       )}
 
-      {status === 'ready' && categories.length === 0 && (
+      {/* ---- Search results view ---- */}
+      {status === 'ready' && searching && (
+        <div className="tp-sections">
+          <section className="tp-category">
+            <div className="tp-category-header">
+              <h2 className="tp-category-title">
+                {results.length > 0
+                  ? `Results for “${query.trim()}”`
+                  : `No matches for “${query.trim()}”`}{' '}
+                {results.length > 0 && (
+                  <span className="tp-emoji">({results.length})</span>
+                )}
+              </h2>
+            </div>
+            {results.length > 0 ? (
+              <div className="tp-grid">
+                {results.map((tpl) => (
+                  <TemplateCard
+                    key={tpl.id ?? getThumb(tpl)}
+                    template={tpl}
+                    onCustomize={handleCustomize}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="tp-state">
+                Try a different word — search works even with small spelling mistakes.
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {/* ---- Normal category view (when not searching) ---- */}
+      {status === 'ready' && !searching && categories.length === 0 && (
         <div className="tp-state">No templates found yet.</div>
       )}
 
-      {status === 'ready' && categories.length > 0 && (
+      {status === 'ready' && !searching && categories.length > 0 && (
         <div className="tp-sections">
           {(expanded && categories.some((c) => c.key === expanded)
             ? categories.filter((c) => c.key === expanded)
@@ -240,21 +398,15 @@ function TemplateCard({ template, onCustomize }) {
     return () => ro.disconnect();
   }, []);
 
-  // Size each line the way the editor does (size × height/1000), THEN shrink any
-  // line that is wider than the card so it fits inside the margins — just like
-  // the original. This keeps title/body proportions but never overflows,
-  // whatever font or text length a template has.
   const fitLines = () => {
     const el = wrapRef.current;
     if (!el) return;
     const W = el.clientWidth, H = el.clientHeight;
     if (!W || !H) return;
 
-    // 1) give every line its proportional base size (title bigger than body),
-    //    then measure how wide each one wants to be
     const bases = {};
     let k = 1;
-    const avail = W * 0.88;   // keep a margin, like the original
+    const avail = W * 0.88;
     layout.forEach((item) => {
       const span = spanRefs.current[item.id];
       if (!span) return;
@@ -262,12 +414,9 @@ function TemplateCard({ template, onCustomize }) {
       bases[item.id] = base;
       span.style.fontSize = base + 'px';
       const natural = span.scrollWidth;
-      if (natural > avail) k = Math.min(k, avail / natural);   // widest line sets the scale
+      if (natural > avail) k = Math.min(k, avail / natural);
     });
 
-    // 2) apply the SAME scale to every line so proportions are preserved and the
-    //    widest line just fits inside the margin (self-calibrating: if the base
-    //    is too big, k shrinks everything back down together)
     if (k < 1) {
       layout.forEach((item) => {
         const span = spanRefs.current[item.id];
@@ -277,7 +426,6 @@ function TemplateCard({ template, onCustomize }) {
   };
 
   useLayoutEffect(fitLines, [dims, template.id]);
-  // re-fit once custom fonts finish loading (their real widths differ)
   useEffect(() => {
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLines);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -310,7 +458,7 @@ function TemplateCard({ template, onCustomize }) {
                 fontFamily: item.font || 'Inter',
                 color: item.color || '#1a1a1a',
                 textAlign: item.align || 'center',
-                whiteSpace: 'nowrap',   // force one line (fit-to-width handles size)
+                whiteSpace: 'nowrap',
                 maxWidth: 'none',
                 overflow: 'visible',
               }}

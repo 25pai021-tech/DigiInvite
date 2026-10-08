@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import './FAQ.css';
 
 const FAQS = [
-  {
+    {
     q: 'How does the AI Invitation Generator work?',
-    a: 'Simply select your celebration type (Wedding, Birthday, Housewarming, Sangeet, etc.) and describe your theme or cultural preference. In under 30 seconds, our AI composes a custom-themed, high-resolution invitation card background with perfect editorial layout.',
+    a: 'Choose your celebration type and enter your event details — theme, colour palette, names, and date. When you click "Generate My Card", our AI composes a unique, high-resolution invitation background made just for your event. It adapts to the occasion and even free-form custom themes like "vintage" or "space", keeping the centre open for your text and photo. The generated card then opens in our studio editor, where you can fine-tune fonts, colours, and details before downloading.',
   },
   {
     q: 'Can I edit the generated design and text afterwards?',
@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: 'What formats can I download my invitation in?',
-    a: 'You can export in Ultra-HD 300 DPI print-ready PDF, WhatsApp-optimized PNG, Instagram Story (1080×1920), and JPG—all completely watermark-free on premium tiers.',
+    a: 'Once your payment is complete, you can download your card as a high-quality PNG, a transparent PNG, a JPG, or a print-ready PDF — as many times as you like. PNG and JPG are great for sharing on WhatsApp and social media, while the PDF is ideal for printing.',
   },
   {
     q: 'Are Indian regional languages supported?',

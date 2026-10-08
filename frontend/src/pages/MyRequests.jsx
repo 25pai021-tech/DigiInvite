@@ -25,6 +25,9 @@ export default function MyRequests() {
   const [publishingId, setPublishingId] = useState(null);
   const [publishModal, setPublishModal] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -90,6 +93,39 @@ export default function MyRequests() {
     }
 
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
+  }
+
+  function startRename(r) {
+    setEditingId(r.id);
+    setEditName(r.event_name || '');
+  }
+
+  function cancelRename() {
+    setEditingId(null);
+    setEditName('');
+  }
+
+  async function saveRename(requestId) {
+    const name = editName.trim();
+    if (!name) {
+      alert('Please enter a name.');
+      return;
+    }
+    setSavingName(true);
+    const { error } = await supabase
+      .from('invitation_requests')
+      .update({ event_name: name })
+      .eq('id', requestId);
+    setSavingName(false);
+    if (error) {
+      alert('Could not rename this request. Please try again.');
+      return;
+    }
+    setRequests((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, event_name: name } : r))
+    );
+    setEditingId(null);
+    setEditName('');
   }
 
   async function handlePublish(request) {
@@ -180,8 +216,50 @@ export default function MyRequests() {
           return (
             <div key={r.id} style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                <div>
-                  <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>{r.event_name}</h3>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {editingId === r.id ? (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                      <input
+                        type="text"
+                        value={editName}
+                        autoFocus
+                        maxLength={80}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveRename(r.id);
+                          if (e.key === 'Escape') cancelRename();
+                        }}
+                        style={renameInputStyle}
+                      />
+                      <button
+                        onClick={() => saveRename(r.id)}
+                        disabled={savingName}
+                        style={{ ...iconBtnStyle, color: '#16a34a' }}
+                        title="Save"
+                      >
+                        {savingName ? '…' : '✓'}
+                      </button>
+                      <button
+                        onClick={cancelRename}
+                        style={{ ...iconBtnStyle, color: '#e05555' }}
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <h3 style={{ margin: '0 0 4px', fontSize: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>{r.event_name}</span>
+                      <button
+                        onClick={() => startRename(r)}
+                        style={iconBtnStyle}
+                        title="Rename"
+                        aria-label="Rename request"
+                      >
+                        ✏️
+                      </button>
+                    </h3>
+                  )}
                   <div style={{ color: 'var(--muted, #888)', fontSize: 14 }}>
                     {r.event_type} · {r.date} · {r.venue}
                   </div>
@@ -391,6 +469,7 @@ const modalContentStyle = {
   boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
   border: '1px solid #f3e8eb',
 };
+
 const inputStyle = {
   flex: 1,
   padding: '10px 14px',
@@ -398,4 +477,22 @@ const inputStyle = {
   border: '1px solid #d1d5db',
   fontSize: 14,
   background: '#f9fafb',
+};
+const iconBtnStyle = {
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: 15,
+  lineHeight: 1,
+  padding: 4,
+  borderRadius: 6,
+};
+const renameInputStyle = {
+  padding: '6px 10px',
+  borderRadius: 8,
+  border: '1px solid #d1d5db',
+  fontSize: 16,
+  fontWeight: 600,
+  minWidth: 200,
+  maxWidth: '100%',
 };

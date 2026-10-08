@@ -19,6 +19,12 @@ import PublicInvite from './pages/PublicInvite';
 import { Navigate } from 'react-router-dom';  
 import Pricing from './pages/Pricing';
 import About from './pages/About';
+import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
+import Terms from './pages/Legal/Terms';
+import RefundPolicy from './pages/Legal/RefundPolicy';
+
+
+
 // Placeholder pages — create these later
 function ComingSoon({ title }) {
   return (
@@ -59,12 +65,14 @@ export default function App() {
               <Route path="/my-requests" element={<MyRequests />} />
               <Route path="/create-invitation" element={<CreateInvitation />} />
               <Route path="/templates" element={<TemplatesPage />} />
-              <Route path="/generator" element={<ComingSoon title="AI Generator" />} />
               <Route path="/editor" element={<Navigate to="/my-requests" replace />} />
               <Route path="/editor/:requestId" element={<Editor />} />
               <Route path="/pricing"   element={<Pricing />} />
               <Route path="/about"     element={<About />} />
               <Route path="/contact"   element={<Contact />} />
+              <Route path="/privacy"   element={<PrivacyPolicy />} />
+              <Route path="/terms"     element={<Terms />} />
+              <Route path="/refund"    element={<RefundPolicy />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<ProtectedAdminRoute> <AdminDashboard /> </ProtectedAdminRoute>}/>
               <Route path="*"          element={<ComingSoon title="Page Not Found" />} />

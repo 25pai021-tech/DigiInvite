@@ -67,6 +67,7 @@ export default function App() {
               <Route path="/contact"   element={<Contact />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<ProtectedAdminRoute> <AdminDashboard /> </ProtectedAdminRoute>}/>
+              <Route path="/invite/:slug" element={<PublicInvite />} />
               <Route path="*"          element={<ComingSoon title="Page Not Found" />} />
             </Routes>
           </main>

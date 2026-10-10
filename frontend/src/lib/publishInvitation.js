@@ -186,7 +186,8 @@ export async function uploadPublicEventPhoto(slug, file, caption = '', uploadedB
  * Generates a WhatsApp share URL with pre-filled invitation text.
  */
 export function getWhatsAppShareUrl(title, publicUrl) {
-  const fullUrl = publicUrl.startsWith('http') ? publicUrl : `${window.location.origin}${publicUrl}`;
+  const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
+  const fullUrl = publicUrl.startsWith('http') ? publicUrl : `${SITE_URL}${publicUrl}`;
   const text = `🎉 You're invited to *${title}*!\n\nView the invitation, event details, venue & directions here:\n👉 ${fullUrl}`;
   return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 }

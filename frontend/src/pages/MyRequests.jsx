@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
-import { upgradeToPremium } from '../lib/premium';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -49,19 +48,7 @@ export default function MyRequests() {
     load();
   }, [user]);
 
-  // Shows a Premium upgrade prompt; returns true if the user upgraded.
-  async function offerUpgrade(message) {
-    const ok = window.confirm(`${message}\n\nUpgrade to Premium now?`);
-    if (!ok) return false;
-    try {
-      await upgradeToPremium();
-      alert('You are now Premium! Enjoy unlimited generations, premium templates and publishing.');
-      return true;
-    } catch (e) {
-      if (e?.message && e.message !== 'Upgrade cancelled.') alert(e.message);
-      return false;
-    }
-  }
+
 
   async function handleGenerate(requestId) {
     setGeneratingId(requestId);
@@ -73,10 +60,10 @@ export default function MyRequests() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 402) {
-        const upgraded = await offerUpgrade(data.detail || 'You need Premium to continue.');
-        if (upgraded) { setGeneratingId(null); return handleGenerate(requestId); }
+        alert(`${data.detail || 'You need Premium to continue.'}\n\nGo to the Pricing page to upgrade to Premium.`);
         return;
       }
+
       if (!res.ok) throw new Error(data.detail || 'Could not generate your card.');
 
 
@@ -153,7 +140,8 @@ export default function MyRequests() {
     setPublishingId(request.id);
     try {
       const res = await publishInvitation(request.id);
-      const publicUrl = `${window.location.origin}${res.public_url}`;
+      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
+      const publicUrl = `${SITE_URL}${res.public_url}`;
       setPublishModal({
         id: request.id,
         slug: res.public_slug,
@@ -183,8 +171,7 @@ export default function MyRequests() {
       );
     } catch (err) {
       if (err?.status === 402) {
-        const upgraded = await offerUpgrade(err.message || 'Publishing is a Premium feature.');
-        if (upgraded) { setPublishingId(null); return handlePublish(request); }
+        alert(`${err.message || 'Publishing is a Premium feature.'}\n\nGo to the Pricing page to upgrade to Premium.`);
         return;
       }
       alert(err.message || 'Failed to publish invitation.');

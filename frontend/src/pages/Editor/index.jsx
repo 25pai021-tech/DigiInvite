@@ -211,7 +211,6 @@ export default function Editor() {
     }
     if (!isPremiumUser) {
       alert('Publishing is a Premium feature. Upgrade to Premium to publish your invitation.');
-      handleUpgrade();
       return;
     }
     setIsPublishing(true);
@@ -220,7 +219,8 @@ export default function Editor() {
         await editor.save();
       }
       const res = await publishInvitation(request.id);
-      const fullUrl = `${window.location.origin}${res.public_url}`;
+      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
+      const fullUrl = `${SITE_URL}${res.public_url}`;
       setPublishModal({
         slug: res.public_slug,
         title: request.event_name || 'My Celebration',

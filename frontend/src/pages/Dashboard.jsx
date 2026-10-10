@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
+import { fetchPremiumStatus } from '../lib/premium';
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
 
@@ -16,13 +17,16 @@ export default function Dashboard() {
   const [publishingId, setPublishingId] = useState(null);
   const [publishModal, setPublishModal] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [premium, setPremium] = useState(null);
+  const isPremium = Boolean(premium?.is_premium);
 
   const STATS = [
     { key: 'invitations', label: 'My Invitations', value: invitationCount, icon: <InvitationIcon />, accent: '#7dd3fc' },
+    { key: 'plan', label: 'Your Plan', value: isPremium ? 'Premium' : 'Free', icon: <RsvpIcon />, accent: '#f5b301' },
     { key: 'drafts', label: 'Saved Drafts', value: 0, icon: <DraftIcon />, accent: '#fb923c' },
-    { key: 'rsvps', label: 'RSVP Responses', value: 0, icon: <RsvpIcon />, accent: '#c084fc' },
     { key: 'downloads', label: 'Downloads', value: 0, icon: <DownloadIcon />, accent: '#f472b6' },
   ];
+
 
   useEffect(() => {
     if (!user) return;
@@ -48,11 +52,18 @@ export default function Dashboard() {
     loadData();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    fetchPremiumStatus().then(setPremium);
+  }, [user]);
+
+
   async function handlePublish(invite) {
     setPublishingId(invite.id);
     try {
       const res = await publishInvitation(invite.id);
-      const publicUrl = `${window.location.origin}${res.public_url}`;
+      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
+      const publicUrl = `${SITE_URL}${res.public_url}`;
       setPublishModal({
         id: invite.id,
         slug: res.public_slug,
@@ -118,13 +129,25 @@ export default function Dashboard() {
         <div className="dash-hero">
           <div>
             <h1 className="dash-hero__title">My Dashboard</h1>
-            <p className="dash-hero__subtitle">Manage your invitations, RSVPs, and downloads.</p>
+            <p className="dash-hero__subtitle">Manage your invitations, templates, and downloads.</p>
             <button className="dash-cta" onClick={() => navigate('/create-invitation')}>
               <span className="dash-cta__plus">+</span> Create New Invitation
             </button>
           </div>
 
-          <h2 className="dash-hero__welcome">Welcome, {userName}</h2>
+          <div style={{ textAlign: 'right' }}>
+            <h2 className="dash-hero__welcome">Welcome, {userName}</h2>
+            {isPremium ? (
+              <span style={{ display: 'inline-block', marginTop: 10, background: 'linear-gradient(90deg,#b8860b,#f5c542)', color: '#2b2200', fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 999 }}>
+                ⭐ Premium Member
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                <span style={{ background: '#e5e7eb', color: '#555', fontWeight: 700, fontSize: 12, padding: '6px 12px', borderRadius: 999 }}>Free plan</span>
+                <button onClick={() => navigate('/pricing')} style={{ background: 'transparent', border: 'none', color: '#7a1030', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Upgrade →</button>
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="dash-stats">

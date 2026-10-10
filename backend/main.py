@@ -151,6 +151,26 @@ def get_or_create_profile(user_id: str) -> dict:
     return {"id": user_id, "is_premium": False, "ai_generations_used": 0}
 
 
+def count_ai_cards(user_id: str, exclude_request_id: str = None) -> int:
+    """How many AI-generated cards this user already has (image stored under /generated/)."""
+    if not user_id:
+        return 0
+    try:
+        q = (
+            supabase.table("invitation_requests")
+            .select("id", count="exact")
+            .eq("user_id", user_id)
+            .ilike("generated_image_url", "%/generated/%")
+        )
+        if exclude_request_id:
+            q = q.neq("id", exclude_request_id)
+        res = q.execute()
+        return res.count or 0
+    except Exception as e:
+        print(f"[count_ai_cards] failed: {e}")
+        return 0
+
+
 @app.get("/")
 def home():
     return {"message": "DigiInvite backend is running"}
@@ -302,7 +322,7 @@ def my_premium(user=Depends(get_current_user)):
     p = get_or_create_profile(user.id)
     return {
         "is_premium": bool(p.get("is_premium")),
-        "ai_generations_used": int(p.get("ai_generations_used") or 0),
+        "ai_generations_used": count_ai_cards(user.id),
         "free_limit": FREE_AI_GENERATION_LIMIT,
     }
 
@@ -956,16 +976,17 @@ def generate_card(body: GenerateCardIn):
         raise HTTPException(404, "Request not found")
     row = res.data[0]
 
-    # ----- Free AI-generation limit (Premium = unlimited) -----
+    # ----- Free AI-card limit (counts the user's existing AI cards; Premium = unlimited) -----
     owner_id = row.get("user_id")
     profile = get_or_create_profile(owner_id)
     is_premium = bool(profile.get("is_premium"))
-    used = int(profile.get("ai_generations_used") or 0)
-    if not is_premium and used >= FREE_AI_GENERATION_LIMIT:
-        raise HTTPException(
-            402,
-            f"You've used all {FREE_AI_GENERATION_LIMIT} free AI generations. Upgrade to Premium for unlimited generations.",
-        )
+    if not is_premium:
+        used = count_ai_cards(owner_id, exclude_request_id=body.request_id)
+        if used >= FREE_AI_GENERATION_LIMIT:
+            raise HTTPException(
+                402,
+                f"You've used all {FREE_AI_GENERATION_LIMIT} free AI cards. Upgrade to Premium for unlimited AI cards.",
+            )
 
     # 2. find a matching template and build the prompt
     template = find_matching_template(row)
@@ -1041,15 +1062,5 @@ def generate_card(body: GenerateCardIn):
     supabase.table("invitation_requests").update(
         {"generated_image_url": image_url}
     ).eq("id", body.request_id).execute()
-
-    # count this generation for free users (Premium is unlimited)
-    if not is_premium and owner_id:
-        try:
-            supabase.table("profiles").update({
-                "ai_generations_used": used + 1,
-                "updated_at": _now_iso(),
-            }).eq("id", owner_id).execute()
-        except Exception as e:
-            print(f"[profiles] usage increment failed: {e}")
 
     return {"success": True, "prompt": prompt, "image_url": image_url}

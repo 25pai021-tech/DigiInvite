@@ -950,6 +950,17 @@ def generate_card(body: GenerateCardIn):
         raise HTTPException(404, "Request not found")
     row = res.data[0]
 
+    # ----- Free AI-generation limit (Premium = unlimited) -----
+    owner_id = row.get("user_id")
+    profile = get_or_create_profile(owner_id)
+    is_premium = bool(profile.get("is_premium"))
+    used = int(profile.get("ai_generations_used") or 0)
+    if not is_premium and used >= FREE_AI_GENERATION_LIMIT:
+        raise HTTPException(
+            402,
+            f"You've used all {FREE_AI_GENERATION_LIMIT} free AI generations. Upgrade to Premium for unlimited generations.",
+        )
+
     # 2. find a matching template and build the prompt
     template = find_matching_template(row)
     prompt = build_prompt(row, template)
@@ -1025,5 +1036,14 @@ def generate_card(body: GenerateCardIn):
         {"generated_image_url": image_url}
     ).eq("id", body.request_id).execute()
 
-    return {"success": True, "prompt": prompt, "image_url": image_url}
+    # count this generation for free users (Premium is unlimited)
+    if not is_premium and owner_id:
+        try:
+            supabase.table("profiles").update({
+                "ai_generations_used": used + 1,
+                "updated_at": _now_iso(),
+            }).eq("id", owner_id).execute()
+        except Exception as e:
+            print(f"[profiles] usage increment failed: {e}")
 
+    return {"success": True, "prompt": prompt, "image_url": image_url}

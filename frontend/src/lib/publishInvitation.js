@@ -7,89 +7,26 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
  * Generates/saves public_slug, published = true, and published_at.
  */
 export async function publishInvitation(requestId, customSlug = null) {
-  // First attempt via backend API
+  // Always go through the backend so the Premium gate is enforced. (No direct
+  // Supabase fallback — that would let a free user bypass the publish gate.)
+  let res;
   try {
-    const res = await fetch(`${API_URL}/publishInvitation`, {
+    res = await fetch(`${API_URL}/publishInvitation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ request_id: requestId, custom_slug: customSlug || undefined }),
     });
-
-    if (res.ok) {
-      const data = await res.json();
-      return data;
-    }
-  } catch (err) {
-    console.warn('Backend /publishInvitation failed, trying direct Supabase update:', err);
+  } catch {
+    throw new Error('Could not reach the server to publish. Please try again.');
   }
 
-  // Fallback: Direct Supabase update
-  const { data: row, error: fetchErr } = await supabase
-    .from('invitation_requests')
-    .select('*')
-    .eq('id', requestId)
-    .single();
-
-  if (fetchErr || !row) {
-    throw new Error('Failed to find invitation to publish.');
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.detail || 'Failed to publish invitation.');
+    err.status = res.status;   // 402 = Premium required
+    throw err;
   }
-
-  let slug = (customSlug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  if (!slug) {
-    const baseName = (row.event_name || row.event_type || 'invite')
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .slice(0, 28)
-      .replace(/-+$/, '');
-    const rand = Math.random().toString(36).substring(2, 8);
-    slug = `${baseName || 'invite'}-${rand}`;
-  }
-
-  const nowIso = new Date().toISOString();
-  let editorState = row.editor_state || {};
-  if (typeof editorState === 'string') {
-    try {
-      editorState = JSON.parse(editorState);
-    } catch {
-      editorState = {};
-    }
-  }
-  editorState.publish_info = {
-    public_slug: slug,
-    published: true,
-    published_at: nowIso,
-  };
-
-  try {
-    const { error: colErr } = await supabase
-      .from('invitation_requests')
-      .update({
-        public_slug: slug,
-        published: true,
-        published_at: nowIso,
-        editor_state: editorState,
-      })
-      .eq('id', requestId);
-
-    if (colErr) throw colErr;
-  } catch (err) {
-    console.warn('Direct column update failed; saving in editor_state only:', err);
-    const { error: stErr } = await supabase
-      .from('invitation_requests')
-      .update({ editor_state: editorState })
-      .eq('id', requestId);
-    if (stErr) throw stErr;
-  }
-
-  return {
-    success: true,
-    public_slug: slug,
-    published: true,
-    published_at: nowIso,
-    request_id: requestId,
-    public_url: `/invite/${slug}`,
-  };
+  return data;
 }
 
 /**

@@ -368,7 +368,7 @@ export default function Templates() {
                     ) : (
                       <div className="tpl-fallback-thumb">
                         <span className="fallback-ornament">✦</span>
-                        <strong>{displayName}</strong>
+                        <strong>{tpl.event_type || 'Invitation'}</strong>
                         <small>{tpl.event_type || 'Celebration'}</small>
                       </div>
                     )}
@@ -386,9 +386,6 @@ export default function Templates() {
                   </div>
 
                   <div className="tpl-card-meta">
-                    <h4 className="tpl-card-name" title={displayName}>
-                      {displayName}
-                    </h4>
                     <div className="tpl-card-tags">
                       <span className="tpl-tag-event">{tpl.event_type || 'Event'}</span>
                       {tpl.theme && <span className="tpl-tag-theme">{tpl.theme}</span>}

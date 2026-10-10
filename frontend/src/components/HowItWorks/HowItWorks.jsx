@@ -184,7 +184,7 @@ export default function HowItWorks() {
                         </div>
                       </div>
                       <div className="mock-field">
-                        <span className="field-label">Special RSVP Note</span>
+                        <span className="field-label">Special Message</span>
                         <div className="field-input-box">Cocktail attire requested. Valet available.</div>
                       </div>
                     </div>

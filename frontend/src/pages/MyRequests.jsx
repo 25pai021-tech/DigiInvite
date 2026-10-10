@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
+import { upgradeToPremium } from '../lib/premium';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -48,6 +49,20 @@ export default function MyRequests() {
     load();
   }, [user]);
 
+  // Shows a Premium upgrade prompt; returns true if the user upgraded.
+  async function offerUpgrade(message) {
+    const ok = window.confirm(`${message}\n\nUpgrade to Premium now?`);
+    if (!ok) return false;
+    try {
+      await upgradeToPremium();
+      alert('You are now Premium! Enjoy unlimited generations, premium templates and publishing.');
+      return true;
+    } catch (e) {
+      if (e?.message && e.message !== 'Upgrade cancelled.') alert(e.message);
+      return false;
+    }
+  }
+
   async function handleGenerate(requestId) {
     setGeneratingId(requestId);
     try {
@@ -56,8 +71,14 @@ export default function MyRequests() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ request_id: requestId }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        const upgraded = await offerUpgrade(data.detail || 'You need Premium to continue.');
+        if (upgraded) { setGeneratingId(null); return handleGenerate(requestId); }
+        return;
+      }
       if (!res.ok) throw new Error(data.detail || 'Could not generate your card.');
+
 
       // mark it Draft immediately — no admin step involved
       const { error } = await supabase
@@ -161,6 +182,11 @@ export default function MyRequests() {
         )
       );
     } catch (err) {
+      if (err?.status === 402) {
+        const upgraded = await offerUpgrade(err.message || 'Publishing is a Premium feature.');
+        if (upgraded) { setPublishingId(null); return handlePublish(request); }
+        return;
+      }
       alert(err.message || 'Failed to publish invitation.');
     } finally {
       setPublishingId(null);

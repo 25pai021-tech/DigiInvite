@@ -524,6 +524,12 @@ def publish_invitation(body: PublishInvitationIn):
         raise HTTPException(404, "Invitation not found")
     row = req.data[0]
 
+    # Publishing is a Premium-only feature
+    owner_id = row.get("user_id")
+    profile = get_or_create_profile(owner_id)
+    if not profile.get("is_premium"):
+        raise HTTPException(402, "Publishing is a Premium feature. Upgrade to Premium to publish your invitation.")
+    
     # Generate or sanitize slug
     slug = (body.custom_slug or "").strip().lower()
     if slug:

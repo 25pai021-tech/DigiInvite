@@ -6,12 +6,12 @@ const FREE_FEATURES = [
   'Up to 5 AI card generations',
   'Full canvas editor',
   'Download as PNG, JPG & PDF',
-  'Premium templates include a watermark',
+  'Premium templates show a watermark (remove on any card for ₹99)',
 ];
 
 const PREMIUM_FEATURES = [
   'Everything in Free',
-  'All premium templates — watermark-free',
+  'All premium templates — watermark-free (no ₹99 fee)',
   'Unlimited AI card generations',
   'Publish invitations as a shareable web page',
   'One-time payment · lifetime access',

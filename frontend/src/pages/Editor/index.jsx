@@ -13,7 +13,7 @@ import LayersPanel from './LayersPanel';
 import ContextMenu from './ContextMenu';
 import Rulers from './Rulers';
 import { publishInvitation, getWhatsAppShareUrl } from '../../lib/publishInvitation';
-import { fetchPremiumStatus, upgradeToPremium } from '../../lib/premium';
+import { fetchPremiumStatus, upgradeToPremium, payForTemplate } from '../../lib/premium';
 import './editor.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -33,7 +33,11 @@ export default function Editor() {
   const [copied, setCopied] = useState(false);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [paying, setPaying] = useState(false);
   const canvasWrapRef = useRef(null);
+
+  // Has this specific card already been paid for (₹99 one-card unlock)?
+  const isPaidCard = request?.status === 'Paid';
 
   // Load the signed-in user's Premium status (controls the watermark & publish).
   useEffect(() => {
@@ -131,9 +135,10 @@ export default function Editor() {
     };
   }, [requestId]);
 
-  // A premium template shows a watermark until the user upgrades to Premium.
+  // A premium template shows a watermark for free users. It is removed when the
+  // user is Premium (free) OR they pay the one-time ₹99 fee for this card.
   const isPremiumTemplate = Boolean(request?.templates?.is_premium);
-  const watermarked = isPremiumTemplate && !isPremiumUser;
+  const watermarked = isPremiumTemplate && !isPremiumUser && !isPaidCard;
   const editor = useFabricEditor({ request, watermarked });
 
   useEffect(() => {
@@ -198,6 +203,28 @@ export default function Editor() {
     }
   };
 
+
+  // Pay ₹99 once to remove the watermark on THIS card only (free users).
+  const handlePayForCard = async () => {
+    if (paying) return;
+    if (request.is_template) {
+      alert('Please click "Save Edits" first to save this card, then remove the watermark.');
+      return;
+    }
+    setPaying(true);
+    try {
+      await payForTemplate(request.id);
+      setRequest((prev) => ({ ...prev, status: 'Paid' })); // drops the watermark live
+      editor.removeWatermark?.();
+      alert('Payment successful! The watermark has been removed from this card.');
+    } catch (err) {
+      if (err?.message && err.message !== 'Payment cancelled.') {
+        alert(err.message);
+      }
+    } finally {
+      setPaying(false);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     const pdf = await editor.exportPdf(3);
@@ -427,20 +454,30 @@ export default function Editor() {
           <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
           <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
           <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
-          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
-        </div>
-
-        {watermarked && (
-          <button
-            className="editor-btn editor-btn-green"
-            onClick={handleUpgrade}
-            disabled={upgrading}
-            title="Remove the watermark and download in full quality"
-          >
-            {upgrading ? 'Opening…' : '✦ Upgrade to remove watermark'}
-          </button>
+          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>        {watermarked && (
+          <>
+            <button
+              className="editor-btn editor-btn-green"
+              onClick={handlePayForCard}
+              disabled={paying}
+              title="Pay ₹99 once to remove the watermark on this card"
+            >
+              {paying ? 'Opening…' : '✦ Remove watermark – ₹99'}
+            </button>
+            <button
+              className="editor-btn"
+              onClick={handleUpgrade}
+              disabled={upgrading}
+              title="Get Premium (₹499) — watermark-free on all templates, forever"
+            >
+              {upgrading ? 'Opening…' : 'or get Premium ₹499'}
+            </button>
+          </>
         )}
       </div>
+        </div>
+
+
 
       {/* Publish Result Modal */}
       {publishModal && (
@@ -593,7 +630,7 @@ export default function Editor() {
 
       <p className="editor-footnote">
         {watermarked
-          ? 'This is a Premium template, so your card shows a watermark. Upgrade to Premium to remove it and download in full quality.'
+          ? 'This is a premium template, so your card shows a watermark. Pay ₹99 once to remove it from this card, or get Premium (₹499) to remove watermarks on all premium templates forever.'
           : 'You can edit and download this card anytime, in PNG, transparent PNG, JPG, or PDF.'}
       </p>
     </div>

@@ -13,7 +13,7 @@ import LayersPanel from './LayersPanel';
 import ContextMenu from './ContextMenu';
 import Rulers from './Rulers';
 import { publishInvitation, getWhatsAppShareUrl } from '../../lib/publishInvitation';
-import { fetchPremiumStatus, upgradeToPremium, payForTemplate } from '../../lib/premium';
+import { fetchPremiumStatus, upgradeToPremium, payForTemplate, stampDownload } from '../../lib/premium';
 import './editor.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -175,9 +175,20 @@ export default function Editor() {
   const isImage = activeType === 'image';
   const isShapeLike = editor.activeObject && !isText && !isImage;
 
-  const handleDownload = (format, opts = {}) => {
-    const dataUrl = editor.exportImage(format, 3, opts);
+  // Non-paying users on a premium template get the watermark baked in server-side.
+  const needsServerStamp = isPremiumTemplate && !isPremiumUser && !isPaidCard;
+
+  const handleDownload = async (format, opts = {}) => {
+    let dataUrl = editor.exportImage(format, 3, opts);
     if (!dataUrl) return;
+    if (needsServerStamp) {
+      try {
+        dataUrl = await stampDownload(request.id, dataUrl, format === 'jpg' ? 'jpg' : 'png');
+      } catch (e) {
+        alert(e.message || 'Could not prepare the download. Please try again.');
+        return;
+      }
+    }
     const link = document.createElement('a');
     link.href = dataUrl;
     link.download = `${(request.event_name || 'invitation').replace(/\s+/g, '-')}.${format}`;
@@ -227,7 +238,18 @@ export default function Editor() {
   };
 
   const handleDownloadPdf = async () => {
-    const pdf = await editor.exportPdf(3);
+    let override = null;
+    if (needsServerStamp) {
+      const png = editor.exportImage('png', 3);
+      if (!png) return;
+      try {
+        override = await stampDownload(request.id, png, 'png');
+      } catch (e) {
+        alert(e.message || 'Could not prepare the download. Please try again.');
+        return;
+      }
+    }
+    const pdf = await editor.exportPdf(3, override);
     pdf?.save(`${(request.event_name || 'invitation').replace(/\s+/g, '-')}.pdf`);
   };
 
@@ -454,28 +476,41 @@ export default function Editor() {
           <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
           <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
           <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
-          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>        {watermarked && (
-          <>
+          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
+        </div>
+
+        {watermarked && (
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignItems: 'center' }}>
             <button
-              className="editor-btn editor-btn-green"
               onClick={handlePayForCard}
               disabled={paying}
               title="Pay ₹99 once to remove the watermark on this card"
+              style={{
+                background: '#16a34a', color: '#fff', border: 'none',
+                borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600,
+                cursor: paying ? 'default' : 'pointer', opacity: paying ? 0.6 : 1,
+                whiteSpace: 'nowrap',
+              }}
             >
               {paying ? 'Opening…' : '✦ Remove watermark – ₹99'}
             </button>
             <button
-              className="editor-btn"
               onClick={handleUpgrade}
               disabled={upgrading}
               title="Get Premium (₹499) — watermark-free on all templates, forever"
+              style={{
+                background: 'transparent', color: 'var(--purple, #7a1030)',
+                border: '1px solid var(--purple, #7a1030)',
+                borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600,
+                cursor: upgrading ? 'default' : 'pointer', opacity: upgrading ? 0.6 : 1,
+                whiteSpace: 'nowrap',
+              }}
             >
               {upgrading ? 'Opening…' : 'or get Premium ₹499'}
             </button>
-          </>
+          </div>
         )}
       </div>
-        </div>
 
 
 

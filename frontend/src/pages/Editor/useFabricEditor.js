@@ -1441,10 +1441,18 @@ export function useFabricEditor({ request, onSaved, watermarked = false }) {
     canvas.setWidth(w);
     canvas.setHeight(h);
 
+    // Export the RAW card (no preview overlay). The watermark for non-paying
+    // users is applied server-side on download, so it cannot be bypassed here.
+    const wmObjs = canvas.getObjects().filter((o) => o.name === WATERMARK_NAME);
+    const wmPrevVisible = wmObjs.map((o) => o.visible);
+    wmObjs.forEach((o) => { o.visible = false; });
+
     const prevBg = canvas.backgroundColor;
     if (format === 'png' && opts.transparent) canvas.backgroundColor = null;
     const dataUrl = canvas.toDataURL({ format: format === 'jpg' ? 'jpeg' : 'png', quality: 0.95, multiplier });
     if (format === 'png' && opts.transparent) canvas.backgroundColor = prevBg;
+
+    wmObjs.forEach((o, i) => { o.visible = wmPrevVisible[i]; });
 
     canvas.setZoom(prevZoom);
     canvas.setWidth(w * prevZoom);
@@ -1454,7 +1462,7 @@ export function useFabricEditor({ request, onSaved, watermarked = false }) {
     return dataUrl;
   }, []);
 
-     const exportPdf = useCallback(async (multiplier = 2) => {
+     const exportPdf = useCallback(async (multiplier = 2, dataUrlOverride = null) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const { jsPDF } = await import('jspdf');
@@ -1462,16 +1470,24 @@ export function useFabricEditor({ request, onSaved, watermarked = false }) {
     const w = CANVAS_W;
     const h = bgHeightRef.current || CANVAS_H;
 
-    // Capture at actual size, ignoring current view zoom
-    const prevZoom = canvas.getZoom();
-    canvas.setZoom(1);
-    canvas.setWidth(w);
-    canvas.setHeight(h);
-    const dataUrl = canvas.toDataURL({ format: 'png', quality: 0.95, multiplier });
-    canvas.setZoom(prevZoom);
-    canvas.setWidth(w * prevZoom);
-    canvas.setHeight(h * prevZoom);
-    canvas.requestRenderAll();
+    // Use a server-prepared image when given (so the watermark is baked in for
+    // non-paying users); otherwise render the raw card without the preview overlay.
+    let dataUrl = dataUrlOverride;
+    if (!dataUrl) {
+      const prevZoom = canvas.getZoom();
+      canvas.setZoom(1);
+      canvas.setWidth(w);
+      canvas.setHeight(h);
+      const wmObjs = canvas.getObjects().filter((o) => o.name === WATERMARK_NAME);
+      const wmPrevVisible = wmObjs.map((o) => o.visible);
+      wmObjs.forEach((o) => { o.visible = false; });
+      dataUrl = canvas.toDataURL({ format: 'png', quality: 0.95, multiplier });
+      wmObjs.forEach((o, i) => { o.visible = wmPrevVisible[i]; });
+      canvas.setZoom(prevZoom);
+      canvas.setWidth(w * prevZoom);
+      canvas.setHeight(h * prevZoom);
+      canvas.requestRenderAll();
+    }
 
     // Page sized in mm: A4 width, height follows the card's aspect ratio.
     // Image fills the whole page → opens at a normal 100%, no huge zoom.

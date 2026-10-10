@@ -23,6 +23,21 @@ export async function fetchPremiumStatus() {
 
 // Runs the one-time Premium upgrade payment via Razorpay.
 // Resolves true on a verified payment; rejects if cancelled or failed.
+// Sends the editor's rendered image to the backend, which returns the final
+// file — clean for Premium/paid cards, watermarked otherwise. The server, not
+// the browser, decides the watermark, so it can't be bypassed in the editor.
+export async function stampDownload(requestId, dataUrl, format = 'png') {
+  const headers = { 'Content-Type': 'application/json', ...(await authHeaders()) };
+  const res = await fetch(`${API_URL}/downloadCard`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ request_id: requestId, image: dataUrl, format }),
+  });
+  if (!res.ok) throw new Error('Could not prepare the download. Please try again.');
+  const data = await res.json();
+  return data.image;
+}
+
 // Pays the one-time ₹99 fee to remove the watermark on a single premium
 // template (for free users only). Premium subscribers never need this.
 // Resolves true on a verified payment; rejects if cancelled or failed.

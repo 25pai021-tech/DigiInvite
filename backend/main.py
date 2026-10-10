@@ -171,6 +171,50 @@ def count_ai_cards(user_id: str, exclude_request_id: str = None) -> int:
         return 0
 
 
+def _is_premium_template(row: dict) -> bool:
+    """Return True if this request/card uses a premium template."""
+    tid = row.get("template_id")
+    if not tid:
+        return False
+    try:
+        r = supabase.table("templates").select("is_premium").eq("id", tid).limit(1).execute()
+        return bool(r.data and r.data[0].get("is_premium"))
+    except Exception:
+        return False
+
+
+def _stamp_watermark(img: "Image.Image") -> "Image.Image":
+    """Bake a tiled 'DigiInvite' watermark into the pixels (server-side, cannot be removed)."""
+    base = img.convert("RGBA")
+    W, H = base.size
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    fsize = max(22, W // 22)
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", fsize)
+    except Exception:
+        font = ImageFont.load_default()
+    text = "DigiInvite  •  PREVIEW"
+    tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    bbox = tmp.textbbox((0, 0), text, font=font, stroke_width=2)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    tile = Image.new("RGBA", (tw + 24, th + 24), (0, 0, 0, 0))
+    ImageDraw.Draw(tile).text(
+        (12, 12), text, font=font,
+        fill=(255, 255, 255, 120), stroke_width=2, stroke_fill=(0, 0, 0, 110),
+    )
+    tile = tile.rotate(30, expand=True)
+    step_x = tile.width + 70
+    step_y = tile.height + 90
+    y = -tile.height
+    while y < H + tile.height:
+        x = -tile.width
+        while x < W + tile.width:
+            overlay.alpha_composite(tile, (x, y))
+            x += step_x
+        y += step_y
+    return Image.alpha_composite(base, overlay).convert("RGB")
+
+
 @app.get("/")
 def home():
     return {"message": "DigiInvite backend is running"}
@@ -243,6 +287,12 @@ class VerifyPremiumIn(BaseModel):
     razorpay_signature: str
 
 
+class DownloadCardIn(BaseModel):
+    request_id: str
+    image: str            # data URL (data:image/png;base64,....) rendered by the editor
+    format: Optional[str] = "png"
+
+
 # ===================== CORE ENDPOINTS =====================
 
 @app.get("/templates")
@@ -304,7 +354,20 @@ def verify_payment(body: VerifyPaymentIn, user=Depends(get_current_user)):
     if not hmac.compare_digest(expected, body.razorpay_signature):
         raise HTTPException(400, "Payment verification failed")
 
-    # 2) Signature is valid → mark THIS user's request as Paid
+    # 2) Re-check the order with Razorpay so ONE ₹99 payment can't be replayed
+    #    onto other cards, and so the amount and card actually match.
+    try:
+        order = razorpay_client.order.fetch(body.razorpay_order_id)
+    except Exception:
+        raise HTTPException(400, "Could not verify the order with Razorpay")
+    if order.get("status") != "paid":
+        raise HTTPException(400, "This order has not been paid")
+    if int(order.get("amount") or 0) != INVITATION_PRICE_RUPEES * 100:
+        raise HTTPException(400, "Unexpected payment amount")
+    if (order.get("notes") or {}).get("request_id") != body.request_id:
+        raise HTTPException(400, "This payment was not made for this card")
+
+    # 3) All good → mark THIS user's request as Paid
     result = (
         supabase.table("invitation_requests")
         .update({"status": "Paid"})
@@ -317,12 +380,59 @@ def verify_payment(body: VerifyPaymentIn, user=Depends(get_current_user)):
 
     return {"success": True, "status": "Paid", "request": result.data[0]}
 
+@app.post("/downloadCard")
+def download_card(body: DownloadCardIn, user=Depends(get_current_user)):
+    """
+    Returns the final card image. The server decides the watermark here, so a free
+    user cannot get a clean download by tampering with the canvas in the browser.
+    - Free templates: always clean.
+    - Premium templates: clean only if the user is Premium or this card is Paid (₹99).
+      Otherwise the watermark is baked into the pixels server-side.
+    """
+    data = body.image.split(",", 1)[-1]
+    try:
+        img = Image.open(io.BytesIO(base64.b64decode(data)))
+    except Exception:
+        raise HTTPException(400, "Invalid image data")
+
+    entitled = False
+    req = (
+        supabase.table("invitation_requests")
+        .select("*")
+        .eq("id", body.request_id)
+        .limit(1)
+        .execute()
+    )
+    if req.data:
+        row = req.data[0]
+        if row.get("user_id") != user.id:
+            raise HTTPException(403, "Not your card")
+        is_prem_tpl = _is_premium_template(row)
+        profile = get_or_create_profile(user.id)
+        entitled = bool(profile.get("is_premium")) or row.get("status") == "Paid" or not is_prem_tpl
+    else:
+        tpl = supabase.table("templates").select("is_premium").eq("id", body.request_id).limit(1).execute()
+        is_prem_tpl = bool(tpl.data and tpl.data[0].get("is_premium"))
+        profile = get_or_create_profile(user.id)
+        entitled = bool(profile.get("is_premium")) or not is_prem_tpl
+
+    if not entitled:
+        img = _stamp_watermark(img)
+
+    fmt = "JPEG" if (body.format or "png").lower() in ("jpg", "jpeg") else "PNG"
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format=fmt, quality=95) if fmt == "JPEG" else img.save(buf, format="PNG")
+    out_b64 = base64.b64encode(buf.getvalue()).decode()
+    mime = "image/jpeg" if fmt == "JPEG" else "image/png"
+    return {"image": f"data:{mime};base64,{out_b64}", "watermarked": not entitled}
+
+
 @app.get("/me/premium")
 def my_premium(user=Depends(get_current_user)):
     p = get_or_create_profile(user.id)
     return {
         "is_premium": bool(p.get("is_premium")),
-        "ai_generations_used": count_ai_cards(user.id),
+        "ai_generations_used": int(p.get("ai_generations_used") or 0),
         "free_limit": FREE_AI_GENERATION_LIMIT,
     }
 
@@ -352,6 +462,19 @@ def verify_premium_payment(body: VerifyPremiumIn, user=Depends(get_current_user)
     ).hexdigest()
     if not hmac.compare_digest(expected, body.razorpay_signature):
         raise HTTPException(400, "Payment verification failed")
+
+    # Make sure this is really the ₹499 Premium order, fully paid.
+    # Stops a cheaper ₹99 order's payment from unlocking Premium.
+    try:
+        order = razorpay_client.order.fetch(body.razorpay_order_id)
+    except Exception:
+        raise HTTPException(400, "Could not verify the order with Razorpay")
+    if order.get("status") != "paid":
+        raise HTTPException(400, "This order has not been paid")
+    if int(order.get("amount") or 0) != PREMIUM_PRICE_RUPEES * 100:
+        raise HTTPException(400, "Unexpected payment amount")
+    if (order.get("notes") or {}).get("purpose") != "premium":
+        raise HTTPException(400, "This payment was not for Premium")
 
     get_or_create_profile(user.id)
     supabase.table("profiles").update({
@@ -976,17 +1099,21 @@ def generate_card(body: GenerateCardIn):
         raise HTTPException(404, "Request not found")
     row = res.data[0]
 
-    # ----- Free AI-card limit (counts the user's existing AI cards; Premium = unlimited) -----
+    # ----- Free AI-card limit -----
+    # We count LIFETIME generations on the profile counter, which NEVER goes down.
+    # This stops a user from deleting an old card to free up a slot.
+    # Re-generating a card that was already generated does NOT use a new slot.
     owner_id = row.get("user_id")
     profile = get_or_create_profile(owner_id)
     is_premium = bool(profile.get("is_premium"))
-    if not is_premium:
-        used = count_ai_cards(owner_id, exclude_request_id=body.request_id)
-        if used >= FREE_AI_GENERATION_LIMIT:
-            raise HTTPException(
-                402,
-                f"You've used all {FREE_AI_GENERATION_LIMIT} free AI cards. Upgrade to Premium for unlimited AI cards.",
-            )
+    existing_url = row.get("generated_image_url") or ""
+    already_generated = "/generated/" in existing_url
+    used = int(profile.get("ai_generations_used") or 0)
+    if not is_premium and not already_generated and used >= FREE_AI_GENERATION_LIMIT:
+        raise HTTPException(
+            402,
+            f"You've used all {FREE_AI_GENERATION_LIMIT} free AI cards. Upgrade to Premium for unlimited AI cards.",
+        )
 
     # 2. find a matching template and build the prompt
     template = find_matching_template(row)
@@ -1062,5 +1189,15 @@ def generate_card(body: GenerateCardIn):
     supabase.table("invitation_requests").update(
         {"generated_image_url": image_url}
     ).eq("id", body.request_id).execute()
+
+    # 6b. Count this as one lifetime AI generation (first time only).
+    #     The counter never decreases, so deleting a card can't free up a slot.
+    if not already_generated and owner_id:
+        try:
+            supabase.table("profiles").update(
+                {"ai_generations_used": used + 1, "updated_at": _now_iso()}
+            ).eq("id", owner_id).execute()
+        except Exception as e:
+            print(f"[profiles] counter update failed: {e}")
 
     return {"success": True, "prompt": prompt, "image_url": image_url}

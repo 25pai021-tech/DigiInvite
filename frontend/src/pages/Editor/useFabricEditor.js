@@ -239,6 +239,25 @@ function buildDefaultObjects(request) {
   return objects;
 }
 
+// Reads the user's free-text "Special Design Instructions" and applies simple
+// style keywords (italic / bold / cursive) to every text object on the card.
+const _TEXT_TYPES = ['i-text', 'textbox', 'text'];
+function applyInstructions(objects, instructions) {
+  if (!instructions || typeof instructions !== 'string') return;
+  const t = instructions.toLowerCase();
+  const wantItalic = /\bitalic\b/.test(t);
+  const wantBold = /\bbold\b/.test(t);
+  const wantCursive = /\b(cursive|script|calligraph|handwritten|handwriting)\b/.test(t);
+  if (!wantItalic && !wantBold && !wantCursive) return;
+  for (const o of objects) {
+    if (!o || !_TEXT_TYPES.includes(o.type)) continue;
+    if (wantItalic) o.set('fontStyle', 'italic');
+    if (wantBold) o.set('fontWeight', 'bold');
+    if (wantCursive) o.set('fontFamily', 'Dancing Script');
+  }
+}
+
+
 /**
  * Builds editable text objects from a template's saved text_layout —
  * using each field's real value from the request, falling back to the
@@ -466,8 +485,11 @@ export function useFabricEditor({ request, onSaved, watermarked = false }) {
       const objects = (layout && layout.length)
         ? buildObjectsFromLayout(layout, request, bgHeight)
         : buildDefaultObjects(request);
+      // Apply "Special Design Instructions" (italic / bold / cursive) to the text.
+      applyInstructions(objects, request.instructions);
       objects.forEach((obj) => canvas.add(obj));
 
+      
       await loadFontsForObjects(objects);
       objects.forEach((obj) => {
         if (['i-text', 'textbox', 'text'].includes(obj.type)) {

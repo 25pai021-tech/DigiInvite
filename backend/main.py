@@ -927,10 +927,14 @@ def build_prompt(r, template=None):
         parts.append("with an empty blank frame in the middle for placing a photo, no people, no faces")
 
     parts.append(
-        "the entire center is empty blank negative space, "
-        "absolutely NO text, NO letters, NO words, NO writing, NO calligraphy, NO numbers, "
-        "NO printed card, NO poster, NO paper document, NO people, NO faces, "
-        "only a decorative border with an empty middle area, high resolution"
+        "the entire center is empty blank negative space with no objects, "
+        "absolutely NO text, NO letters, NO words, NO numbers, NO people, NO faces, "
+        "only an elegant decorative border framing an empty middle area"
+    )
+    parts.append(
+        "clean, simple, uncluttered and refined composition, soft balanced lighting, "
+        "highly detailed ornamentation, sharp focus, professional greeting-card background, "
+        "high resolution"
     )
     return ", ".join(p for p in parts if p)
 
@@ -969,9 +973,12 @@ def generate_card(body: GenerateCardIn):
         "text, words, letters, writing, calligraphy, numbers, typography, caption, title, "
         "printed invitation, invitation card, poster, paper, document, label, "
         "watermark, signature, logo, "
-        "people, person, human, man, woman, face, portrait, child, crowd"
+        "people, person, human, man, woman, face, portrait, child, crowd, "
+        "distorted, deformed, warped, blurry, out of focus, low quality, low resolution, "
+        "cluttered, busy, messy, chaotic, random objects, extra objects, surreal, "
+        "jpeg artifacts, noise, glitch, ugly"
     )
-
+    
     image = None
     last_err = None
     for attempt in range(3):
@@ -984,6 +991,8 @@ def generate_card(body: GenerateCardIn):
                     "negative_prompt": negative_prompt,
                     "width": 1024,
                     "height": 1024,
+                    "num_steps": 20,
+                    "guidance": 7.5,
                 },
                 timeout=120,
             )

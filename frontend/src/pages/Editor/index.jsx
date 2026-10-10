@@ -13,6 +13,7 @@ import LayersPanel from './LayersPanel';
 import ContextMenu from './ContextMenu';
 import Rulers from './Rulers';
 import { publishInvitation, getWhatsAppShareUrl } from '../../lib/publishInvitation';
+import { fetchPremiumStatus, upgradeToPremium } from '../../lib/premium';
 import './editor.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -30,7 +31,18 @@ export default function Editor() {
   const [publishModal, setPublishModal] = useState(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   const canvasWrapRef = useRef(null);
+
+  // Load the signed-in user's Premium status (controls the watermark & publish).
+  useEffect(() => {
+    let active = true;
+    fetchPremiumStatus().then((s) => {
+      if (active) setIsPremiumUser(Boolean(s?.is_premium));
+    });
+    return () => { active = false; };
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user && request && !request.is_template) {
@@ -49,7 +61,7 @@ export default function Editor() {
         // 1. First check if requestId matches an invitation_requests row
         const { data: reqData } = await supabase
           .from('invitation_requests')
-          .select('*, templates(text_layout)')
+          .select('*, templates(text_layout, is_premium)')
           .eq('id', requestId)
           .maybeSingle();
 
@@ -90,6 +102,7 @@ export default function Editor() {
             generated_image_url: tplData.config?.full_image_url || tplData.thumbnail_url,
             templates: {
               text_layout: tplData.text_layout || [],
+              is_premium: tplData.is_premium || false,
             },
             editor_state: tplData.editor_state || null,
             status: 'Draft',
@@ -118,7 +131,10 @@ export default function Editor() {
     };
   }, [requestId]);
 
-  const editor = useFabricEditor({ request });
+  // A premium template shows a watermark until the user upgrades to Premium.
+  const isPremiumTemplate = Boolean(request?.templates?.is_premium);
+  const watermarked = isPremiumTemplate && !isPremiumUser;
+  const editor = useFabricEditor({ request, watermarked });
 
   useEffect(() => {
     if (editor.fitToScreen && canvasWrapRef.current) {
@@ -144,7 +160,6 @@ export default function Editor() {
     return <div style={centerStyle}>{error}</div>;
   }
   if (!request) return null;
-  const isPaid = request.status === 'Paid' || request.status === 'Completed';
 
   const activeType = editor.activeObject?.type;
   const isText =
@@ -164,64 +179,25 @@ export default function Editor() {
     link.click();
   };
 
-    const handlePay = async () => {
+    // One-time upgrade to Premium — removes the watermark on premium templates and
+  // unlocks unlimited AI generation + publishing.
+  const handleUpgrade = async () => {
+    if (upgrading) return;
+    setUpgrading(true);
     try {
-      // must be a saved request (not an unsaved template)
-      if (request.is_template) {
-        alert('Please click "Save Edits" first, then pay.');
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) { navigate('/login'); return; }
-
-      // 1) create the order on our backend
-      const orderRes = await fetch(`${API_URL}/createOrder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ request_id: request.id }),
-      });
-      if (!orderRes.ok) throw new Error('Could not start payment.');
-      const order = await orderRes.json();
-
-      // 2) open the Razorpay popup
-      const options = {
-        key: order.key_id,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'DigiInvite',
-        description: 'Invitation download',
-        order_id: order.order_id,
-        theme: { color: '#7a1030' },
-        handler: async (response) => {
-          // 3) verify on our backend → marks the request Paid
-          const verifyRes = await fetch(`${API_URL}/verifyPayment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({
-              request_id: request.id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-          if (verifyRes.ok) {
-            setRequest((prev) => ({ ...prev, status: 'Paid' })); // unlocks downloads
-            editor.removeWatermark();
-            alert('Payment successful! You can now download your card.');
-          } else {
-            alert('Payment could not be verified.');
-          }
-        },
-      };
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      await upgradeToPremium();
+      setIsPremiumUser(true);        // the editor hook drops the watermark live
+      editor.removeWatermark?.();
+      alert('You are now Premium! The watermark has been removed.');
     } catch (err) {
-      console.error(err);
-      alert(err.message || 'Payment failed to start.');
+      if (err?.message && err.message !== 'Upgrade cancelled.') {
+        alert(err.message);
+      }
+    } finally {
+      setUpgrading(false);
     }
   };
+
 
   const handleDownloadPdf = async () => {
     const pdf = await editor.exportPdf(3);
@@ -231,6 +207,11 @@ export default function Editor() {
   const handlePublish = async () => {
     if (request.is_template) {
       alert('Please click "Save Edits" first to save your invitation, then publish.');
+      return;
+    }
+    if (!isPremiumUser) {
+      alert('Publishing is a Premium feature. Upgrade to Premium to publish your invitation.');
+      handleUpgrade();
       return;
     }
     setIsPublishing(true);
@@ -442,16 +423,21 @@ export default function Editor() {
           {isPublishing ? 'Publishing…' : (request.published || request.editor_state?.publish_info?.published) ? 'Publish / Share Details' : 'Publish Invitation'}
         </button>
 
-        {isPaid ? (
-          <div className="editor-toolbar-group">
-            <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
-            <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
-            <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
-            <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
-          </div>
-        ) : (
-          <button className="editor-btn editor-btn-green" onClick={handlePay}>
-            Pay to Download
+        <div className="editor-toolbar-group">
+          <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
+          <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
+          <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
+          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
+        </div>
+
+        {watermarked && (
+          <button
+            className="editor-btn editor-btn-green"
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            title="Remove the watermark and download in full quality"
+          >
+            {upgrading ? 'Opening…' : '✦ Upgrade to remove watermark'}
           </button>
         )}
       </div>
@@ -606,9 +592,9 @@ export default function Editor() {
       )}
 
       <p className="editor-footnote">
-        {isPaid
-          ? 'You have paid — you can edit and download this card anytime, in PNG, transparent PNG, JPG, or PDF.'
-          : 'You can preview and edit your card. Downloading unlocks after payment.'}
+        {watermarked
+          ? 'This is a Premium template, so your card shows a watermark. Upgrade to Premium to remove it and download in full quality.'
+          : 'You can edit and download this card anytime, in PNG, transparent PNG, JPG, or PDF.'}
       </p>
     </div>
   );

@@ -267,12 +267,12 @@ export default function Templates() {
       <div className="section-inner">
         <div className="templates-header-row">
           <div>
-            <span className="section-tag">Database Gallery</span>
+            <span className="section-tag">Template Gallery</span>
             <h2 className="section-title">
-              Explore 1,000+ Real Templates
+              Explore Our Template Catalog
             </h2>
             <p className="section-sub">
-              Curated from our live template catalog. Every design is fully customizable on our canvas editor.
+              Pulled live from our catalog. Every design is fully customizable on our canvas editor.
             </p>
           </div>
 
@@ -344,7 +344,6 @@ export default function Templates() {
           >
             {filteredTemplates.map((tpl) => {
               const thumbUrl = getThumb(tpl);
-              const isPremium = tpl.tier === 'premium' || tpl.is_premium;
               const displayName = formatTemplateName(tpl.name);
 
               return (
@@ -383,11 +382,7 @@ export default function Templates() {
                       <span className="btn-use-tpl">Customize on Canvas →</span>
                     </div>
 
-                    {isPremium ? (
-                      <span className="tpl-badge-lock">👑 Premium</span>
-                    ) : (
-                      <span className="tpl-badge-free">Free Tier</span>
-                    )}
+                    {tpl.is_premium && <span className="tpl-badge-lock">👑 Premium</span>}
                   </div>
 
                   <div className="tpl-card-meta">
@@ -408,7 +403,7 @@ export default function Templates() {
         {/* View All CTAs */}
         <div className="templates-footer-row">
           <Link to="/templates" className="btn-view-all-templates">
-            <span>Explore All 1,000+ Designs on Template Catalog</span>
+            <span>Browse the Full Template Catalog</span>
             <span className="btn-arrow">→</span>
           </Link>
         </div>

@@ -434,6 +434,17 @@ function TemplateCard({ template, onCustomize }) {
   return (
     <div className="tpl-card">
       <div className="tpl-image-wrap" ref={wrapRef}>
+         {template.is_premium && (
+          <span
+            style={{
+              position: 'absolute', top: 8, right: 8, zIndex: 3,
+              background: '#7a1030', color: '#fff', fontSize: 11, fontWeight: 700,
+              padding: '4px 8px', borderRadius: 999,
+            }}
+          >
+            👑 Premium
+          </span>
+        )}
         {thumb ? (
           <img
             src={thumb}

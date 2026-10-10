@@ -6,8 +6,8 @@ const STEPS = [
   {
     id: 1,
     title: '1. Choose Event & Style',
-    subtitle: 'Select from 20+ occasions or create custom',
-    desc: 'Pick your celebration type—Weddings, Sangeet, Birthdays, Housewarmings, or Corporate Galas. Choose your aesthetic: Royal Heritage, Minimal Modern, Botanical, or Traditional.',
+    subtitle: 'Pick your occasion or create a custom theme',
+    desc: 'Pick your celebration type—Weddings, Sangeet, Birthdays, Housewarmings, or Corporate events. Choose your aesthetic: Royal Heritage, Minimal Modern, Botanical, or Traditional — or type your own custom theme.',
     previewTitle: 'Occasion & Aesthetic Picker',
     tag: 'Step 1 of 5',
   },
@@ -22,8 +22,8 @@ const STEPS = [
   {
     id: 3,
     title: '3. AI Generates Your Card',
-    subtitle: 'Bespoke design generated in < 30 seconds',
-    desc: 'Our AI engine analyzes your theme, cultural symbols, and color palette to craft an exquisite, high-resolution invitation card background with perfect framing.',
+    subtitle: 'A unique background, generated for your event',
+    desc: 'Our AI engine analyses your theme, cultural symbols, and colour palette to craft a unique, high-resolution invitation background, with the centre kept clear for your text and photo.',
     previewTitle: 'AI Prompt & Texture Engine',
     tag: 'Step 3 of 5',
   },
@@ -37,10 +37,10 @@ const STEPS = [
   },
   {
     id: 5,
-    title: '5. Instant RSVP & Share',
-    subtitle: '1-click WhatsApp, QR code & tracking',
-    desc: 'Every invitation includes an auto-generated guest RSVP link and QR code. Share instantly on WhatsApp or download ultra-high-resolution print-ready PDFs.',
-    previewTitle: 'Guest RSVP & WhatsApp Delivery',
+    title: '5. Publish & Share',
+    subtitle: 'Publish a web page & share on WhatsApp',
+    desc: 'Publish your invitation as its own web page with a QR code, share the link on WhatsApp, and download it as a print-ready PDF. Guests can open it and share photos — no app needed.',
+    previewTitle: 'Publish & Share',
     tag: 'Step 5 of 5',
   },
 ];
@@ -73,7 +73,7 @@ export default function HowItWorks() {
             in 5 Simple Stages
           </h2>
           <p className="section-sub">
-            A seamless journey combining generative AI with fine precision editing and effortless guest RSVP tracking.
+            A seamless journey combining generative AI with precise canvas editing and easy one-link sharing.
           </p>
         </div>
 
@@ -157,7 +157,7 @@ export default function HowItWorks() {
                       </div>
                     </div>
                     <div className="scene-helper-note">
-                      <span>✓ 20+ event presets loaded with authentic cultural motifs</span>
+                      <span>✓ Popular event presets, each with cultural motifs</span>
                     </div>
                   </div>
                 )}
@@ -249,22 +249,32 @@ export default function HowItWorks() {
                         </div>
                         <div className="share-action-card qr-card">
                           <span className="action-icon">📱</span>
-                          <strong>Dynamic QR Code</strong>
-                          <small>Instant RSVP on Tables</small>
+                          <strong>QR Code</strong>
+                          <small>Opens your invite page</small>
                         </div>
                       </div>
                       <div className="live-headcount-widget">
                         <div className="hc-header">
-                          <span>Live RSVP Headcount</span>
-                          <span className="hc-badge">Real-Time</span>
+                          <span>Your Public Invitation Page</span>
+                          <span className="hc-badge">Live</span>
                         </div>
-                        <div className="hc-bar-track">
-                          <div className="hc-bar-fill" style={{ width: '88%' }} />
+                        <div
+                          style={{
+                            fontFamily: 'monospace',
+                            fontSize: '0.8rem',
+                            background: 'rgba(0,0,0,0.05)',
+                            borderRadius: 8,
+                            padding: '8px 10px',
+                            margin: '2px 0 12px',
+                            wordBreak: 'break-all',
+                          }}
+                        >
+                          digiinvite.vercel.app/invite/aditya-riya
                         </div>
                         <div className="hc-stats">
-                          <span><strong>186</strong> Attending</span>
-                          <span><strong>12</strong> Regrets</span>
-                          <span><strong>94%</strong> Response Rate</span>
+                          <span>📅 Countdown</span>
+                          <span>📍 Venue &amp; Map</span>
+                          <span>📷 Guest Photos</span>
                         </div>
                       </div>
                     </div>

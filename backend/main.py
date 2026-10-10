@@ -130,6 +130,26 @@ RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 INVITATION_PRICE_RUPEES = 99
+PREMIUM_PRICE_RUPEES = 499          # one-time lifetime Premium
+FREE_AI_GENERATION_LIMIT = 5        # free users get 5 AI generations total
+
+def _now_iso():
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+def get_or_create_profile(user_id: str) -> dict:
+    if not user_id:
+        return {"id": None, "is_premium": False, "ai_generations_used": 0}
+    res = supabase.table("profiles").select("*").eq("id", user_id).limit(1).execute()
+    if res.data:
+        return res.data[0]
+    try:
+        created = supabase.table("profiles").insert({"id": user_id}).execute()
+        if created.data:
+            return created.data[0]
+    except Exception as e:
+        print(f"[profiles] create failed: {e}")
+    return {"id": user_id, "is_premium": False, "ai_generations_used": 0}
+
 
 @app.get("/")
 def home():
@@ -196,6 +216,11 @@ class EventPhotoIn(BaseModel):
     photo_url: str
     caption: Optional[str] = None
     uploaded_by: Optional[str] = "Guest"
+
+class VerifyPremiumIn(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
 
 
 # ===================== CORE ENDPOINTS =====================
@@ -271,6 +296,50 @@ def verify_payment(body: VerifyPaymentIn, user=Depends(get_current_user)):
         raise HTTPException(404, "Request not found")
 
     return {"success": True, "status": "Paid", "request": result.data[0]}
+
+@app.get("/me/premium")
+def my_premium(user=Depends(get_current_user)):
+    p = get_or_create_profile(user.id)
+    return {
+        "is_premium": bool(p.get("is_premium")),
+        "ai_generations_used": int(p.get("ai_generations_used") or 0),
+        "free_limit": FREE_AI_GENERATION_LIMIT,
+    }
+
+
+@app.post("/createPremiumOrder")
+def create_premium_order(user=Depends(get_current_user)):
+    order = razorpay_client.order.create({
+        "amount": PREMIUM_PRICE_RUPEES * 100,
+        "currency": "INR",
+        "receipt": f"premium_{user.id}"[:40],
+        "notes": {"purpose": "premium", "user_id": user.id},
+    })
+    return {
+        "order_id": order["id"],
+        "amount": order["amount"],
+        "currency": order["currency"],
+        "key_id": RAZORPAY_KEY_ID,
+    }
+
+
+@app.post("/verifyPremiumPayment")
+def verify_premium_payment(body: VerifyPremiumIn, user=Depends(get_current_user)):
+    expected = hmac.new(
+        RAZORPAY_KEY_SECRET.encode(),
+        f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(expected, body.razorpay_signature):
+        raise HTTPException(400, "Payment verification failed")
+
+    get_or_create_profile(user.id)
+    supabase.table("profiles").update({
+        "is_premium": True,
+        "premium_since": _now_iso(),
+        "updated_at": _now_iso(),
+    }).eq("id", user.id).execute()
+    return {"success": True, "is_premium": True}
 
 
 # ===================== TRANSLATION =====================

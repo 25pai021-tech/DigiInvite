@@ -398,7 +398,7 @@ function addUploadedPhoto(canvas, photoUrl, bgHeight = CANVAS_H, callback) {
   imgEl.src = cleanUrl;
 }
 
-export function useFabricEditor({ request, onSaved }) {
+export function useFabricEditor({ request, onSaved, watermarked = false }) {
   const canvasElRef = useRef(null);
   const canvasRef = useRef(null);
   const undoStack = useRef([]);
@@ -424,8 +424,9 @@ export function useFabricEditor({ request, onSaved }) {
   const [snapToObjects, setSnapToObjects] = useState(true);
   const guideLinesRef = useRef([]);
   const bgHeightRef = useRef(CANVAS_H);
-  const isPaid = request?.status === 'Paid' || request?.status === 'Completed';
+  const isPaid = !watermarked;
   const isPaidRef = useRef(isPaid);
+
   useEffect(() => { isPaidRef.current = isPaid; }, [isPaid]);
   const snapToGridRef = useRef(snapToGrid);
   const snapToObjectsRef = useRef(snapToObjects);
@@ -446,7 +447,7 @@ export function useFabricEditor({ request, onSaved }) {
     });
     canvasRef.current = canvas;
 
-    const paid = request.status === 'Paid' || request.status === 'Completed';
+    const paid = !watermarked;
     const finishLoad = () => {
       if (!paid) {
         const wm = buildWatermark(CANVAS_W, bgHeightRef.current || CANVAS_H);
@@ -1463,7 +1464,7 @@ export function useFabricEditor({ request, onSaved }) {
     return pdf;
   }, []);
 
-  const removeWatermark = useCallback(() => {
+    const removeWatermark = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     suppressHistory.current = true;
@@ -1473,6 +1474,23 @@ export function useFabricEditor({ request, onSaved }) {
     suppressHistory.current = false;
     canvas.requestRenderAll();
   }, []);
+
+  // Keep the watermark in sync when premium status resolves or the user upgrades.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const hasWm = canvas.getObjects().some((o) => o.name === WATERMARK_NAME);
+    if (watermarked && !hasWm) {
+      suppressHistory.current = true;
+      const wm = buildWatermark(CANVAS_W, bgHeightRef.current || CANVAS_H);
+      canvas.add(wm);
+      canvas.bringToFront(wm);
+      suppressHistory.current = false;
+      canvas.requestRenderAll();
+    } else if (!watermarked && hasWm) {
+      removeWatermark();
+    }
+  }, [watermarked, removeWatermark]);
 
   return {
     canvasElRef,

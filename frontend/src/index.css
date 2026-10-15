@@ -55,3 +55,9 @@ button:focus-visible {
 }
 
 
+/* Content protection: stop drag-to-save and selection on images/canvas. */
+img, canvas, .protect-media {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -22,7 +22,7 @@ import About from './pages/About';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import Terms from './pages/Legal/Terms';
 import RefundPolicy from './pages/Legal/RefundPolicy';
-
+import { useContentProtection } from './lib/contentProtection';
 
 
 // Placeholder pages — create these later
@@ -50,6 +50,7 @@ function ComingSoon({ title }) {
 }
 
 export default function App() {
+  useContentProtection();
   return (
     <ThemeProvider>
       <AdminAuthProvider>

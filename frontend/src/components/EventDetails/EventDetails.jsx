@@ -2,10 +2,20 @@ import React from 'react';
 import { Input, Textarea } from '../Shared/Input';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[0-9]{10}$/;
+const PHONE_RE = /^[6-9][0-9]{9}$/;        // valid Indian 10-digit mobile (starts 6-9)
 const URL_RE = /^https?:\/\/[^\s]+\.[^\s]{2,}$/i;
 
 export const REQUIRED_FIELDS = ['hostName', 'eventName', 'date', 'time', 'venue', 'phone', 'email'];
+
+// Local YYYY-MM-DD for `today` and `today + N years` (used for the date field's min/max).
+const pad = (n) => String(n).padStart(2, '0');
+const toYMD = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export function dateBounds() {
+  const today = new Date();
+  const max = new Date();
+  max.setFullYear(max.getFullYear() + 3);
+  return { min: toYMD(today), max: toYMD(max) };
+}
 
 export function validateEventDetails(data) {
   const errors = {};
@@ -18,11 +28,33 @@ export function validateEventDetails(data) {
     errors.email = 'Enter a valid email address.';
   }
   if (data.phone && !PHONE_RE.test(data.phone)) {
-    errors.phone = 'Enter a valid 10-digit phone number.';
+    errors.phone = 'Enter a valid 10-digit mobile number (starting 6-9).';
   }
   if (data.mapLink && data.mapLink.trim() && !URL_RE.test(data.mapLink.trim())) {
     errors.mapLink = 'Enter a valid link starting with http:// or https://';
   }
+
+  // Date / time must be in the future and within a sensible range.
+  if (data.date) {
+    const { min, max } = dateBounds();
+    const picked = new Date(`${data.date}T00:00:00`);
+    const today = new Date(`${min}T00:00:00`);
+    const maxDate = new Date(`${max}T00:00:00`);
+    if (Number.isNaN(picked.getTime())) {
+      errors.date = 'Enter a valid date.';
+    } else if (picked < today) {
+      errors.date = 'The event date cannot be in the past.';
+    } else if (picked > maxDate) {
+      errors.date = 'Please choose a date within the next 3 years.';
+    } else if (data.time && !errors.time) {
+      // If the event is today, the time must still be in the future.
+      const when = new Date(`${data.date}T${data.time}`);
+      if (!Number.isNaN(when.getTime()) && when < new Date()) {
+        errors.time = 'The event time cannot be in the past.';
+      }
+    }
+  }
+
   return errors;
 }
 
@@ -30,6 +62,7 @@ const showsCoupleNames = (eventType) => ['wedding', 'engagement', 'anniversary']
 
 export default function EventDetails({ data, errors, onChange, eventType }) {
   const set = (field) => (e) => onChange(field, e.target.value);
+  const { min: minDate, max: maxDate } = dateBounds();
 
   const handlePhoneChange = (e) => {
     // Strip anything that isn't a digit, then hard-cap at 10 digits
@@ -83,7 +116,7 @@ export default function EventDetails({ data, errors, onChange, eventType }) {
       )}
 
       <div className="di-field-row">
-        <Input label="Date" required type="date" value={data.date} onChange={set('date')} error={errors.date} />
+        <Input label="Date" required type="date" min={minDate} max={maxDate} value={data.date} onChange={set('date')} error={errors.date} />
         <Input label="Time" required type="time" value={data.time} onChange={set('time')} error={errors.time} />
       </div>
 

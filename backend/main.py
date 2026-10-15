@@ -660,12 +660,14 @@ def upload_image(file: UploadFile = File(...)):
 # ===================== PUBLISH INVITATION & PUBLIC MINI-WEBSITE =====================
 
 @app.post("/publishInvitation")
-def publish_invitation(body: PublishInvitationIn):
+def publish_invitation(body: PublishInvitationIn, user=Depends(get_current_user)):
     # Retrieve request
     req = supabase.table("invitation_requests").select("*").eq("id", body.request_id).limit(1).execute()
     if not req.data:
         raise HTTPException(404, "Invitation not found")
     row = req.data[0]
+    if row.get("user_id") != user.id:
+        raise HTTPException(403, "Not your invitation")
 
     # Publishing is a Premium-only feature
     owner_id = row.get("user_id")
@@ -731,7 +733,10 @@ def get_public_invite(slug: str):
     clean_slug = slug.strip().lower()
     inv = None
 
-    # 1. Try querying by dedicated column
+    # Only trust the dedicated columns, which are set by the (Premium-gated)
+    # publish endpoint using the service key. We do NOT trust
+    # editor_state.publish_info, because editor_state is writable by the client
+    # and a free user could otherwise fake a publish from the browser console.
     try:
         res = supabase.table("invitation_requests").select("*").eq("public_slug", clean_slug).execute()
         if res.data:
@@ -739,43 +744,10 @@ def get_public_invite(slug: str):
     except Exception as e:
         print(f"[publicInvite] Column select error: {e}")
 
-    # 2. Fallback: inspect requests for publish_info in editor_state
-    if not inv:
-        try:
-            all_res = supabase.table("invitation_requests").select("*").execute()
-            for r in (all_res.data or []):
-                st = r.get("editor_state")
-                if isinstance(st, str):
-                    try:
-                        st = json.loads(st)
-                    except Exception:
-                        st = {}
-                if isinstance(st, dict):
-                    pinfo = st.get("publish_info", {})
-                    if pinfo.get("public_slug") == clean_slug:
-                        inv = r
-                        inv["published"] = pinfo.get("published", True)
-                        inv["published_at"] = pinfo.get("published_at")
-                        inv["public_slug"] = clean_slug
-                        break
-        except Exception as e:
-            print(f"[publicInvite] Fallback search error: {e}")
-
     if not inv:
         raise HTTPException(404, "Invitation not found")
 
-    is_published = inv.get("published")
-    if is_published is None:
-        st = inv.get("editor_state")
-        if isinstance(st, str):
-            try:
-                st = json.loads(st)
-            except Exception:
-                st = {}
-        if isinstance(st, dict):
-            is_published = st.get("publish_info", {}).get("published", False)
-
-    if not is_published:
+    if not inv.get("published"):
         raise HTTPException(403, "This invitation is not published yet")
 
     # Fetch event photos
@@ -1092,12 +1064,14 @@ class GenerateCardIn(BaseModel):
 
 
 @app.post("/generateCard")
-def generate_card(body: GenerateCardIn):
+def generate_card(body: GenerateCardIn, user=Depends(get_current_user)):
     # 1. get the saved request
     res = supabase.table("invitation_requests").select("*").eq("id", body.request_id).execute()
     if not res.data:
         raise HTTPException(404, "Request not found")
     row = res.data[0]
+    if row.get("user_id") != user.id:
+        raise HTTPException(403, "Not your request")
 
     # ----- Free AI-card limit -----
     # We count LIFETIME generations on the profile counter, which NEVER goes down.

@@ -53,9 +53,14 @@ export default function MyRequests() {
   async function handleGenerate(requestId) {
     setGeneratingId(requestId);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
       const res = await fetch(`${API_URL}/generateCard`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ request_id: requestId }),
       });
       const data = await res.json().catch(() => ({}));

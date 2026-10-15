@@ -379,7 +379,7 @@ export default function Templates() {
                     )}
 
                     <div className="tpl-overlay-hover">
-                      <span className="btn-use-tpl">Customize on Canvas →</span>
+                      <span className="btn-use-tpl">Customize this template →</span>
                     </div>
 
                     {tpl.is_premium && <span className="tpl-badge-lock">👑 Premium</span>}

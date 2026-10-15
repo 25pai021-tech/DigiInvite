@@ -11,9 +11,14 @@ export async function publishInvitation(requestId, customSlug = null) {
   // Supabase fallback — that would let a free user bypass the publish gate.)
   let res;
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
     res = await fetch(`${API_URL}/publishInvitation`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ request_id: requestId, custom_slug: customSlug || undefined }),
     });
   } catch {

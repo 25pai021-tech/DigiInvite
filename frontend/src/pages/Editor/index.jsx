@@ -463,14 +463,16 @@ export default function Editor() {
           {editor.saveState === 'saving' ? 'Saving…' : 'Save Edits'}
         </button>
 
-        <button
-          className="editor-btn"
-          style={{ background: '#7a1030', color: '#fff' }}
-          disabled={isPublishing}
-          onClick={handlePublish}
-        >
-          {isPublishing ? 'Publishing…' : (request.published || request.editor_state?.publish_info?.published) ? 'Publish / Share Details' : 'Publish Invitation'}
-        </button>
+        {!request.is_template && (
+          <button
+            className="editor-btn"
+            style={{ background: '#7a1030', color: '#fff' }}
+            disabled={isPublishing}
+            onClick={handlePublish}
+          >
+            {isPublishing ? 'Publishing…' : (request.published || request.editor_state?.publish_info?.published) ? 'Publish / Share Details' : 'Publish Invitation'}
+          </button>
+        )}
 
         <div className="editor-toolbar-group">
           <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>

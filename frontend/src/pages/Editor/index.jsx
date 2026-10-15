@@ -361,6 +361,7 @@ export default function Editor() {
           onAddImageFile={editor.addImageFromFile}
           onAddShape={editor.addShape}
           onAddIcon={editor.addIconFromSvg}
+          onAddSticker={editor.addSticker}
           onSetBackgroundColor={editor.setBackgroundColor}
           onSetBackgroundGradient={editor.setBackgroundGradient}
           onSetBackgroundImageFile={editor.setBackgroundImageFile}

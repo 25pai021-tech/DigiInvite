@@ -239,6 +239,25 @@ function buildDefaultObjects(request) {
   return objects;
 }
 
+// Reads the user's free-text "Special Design Instructions" and applies simple
+// style keywords (italic / bold / cursive) to every text object on the card.
+const _TEXT_TYPES = ['i-text', 'textbox', 'text'];
+function applyInstructions(objects, instructions) {
+  if (!instructions || typeof instructions !== 'string') return;
+  const t = instructions.toLowerCase();
+  const wantItalic = /\bitalic\b/.test(t);
+  const wantBold = /\bbold\b/.test(t);
+  const wantCursive = /\b(cursive|script|calligraph|handwritten|handwriting)\b/.test(t);
+  if (!wantItalic && !wantBold && !wantCursive) return;
+  for (const o of objects) {
+    if (!o || !_TEXT_TYPES.includes(o.type)) continue;
+    if (wantItalic) o.set('fontStyle', 'italic');
+    if (wantBold) o.set('fontWeight', 'bold');
+    if (wantCursive) o.set('fontFamily', 'Dancing Script');
+  }
+}
+
+
 /**
  * Builds editable text objects from a template's saved text_layout —
  * using each field's real value from the request, falling back to the
@@ -398,7 +417,7 @@ function addUploadedPhoto(canvas, photoUrl, bgHeight = CANVAS_H, callback) {
   imgEl.src = cleanUrl;
 }
 
-export function useFabricEditor({ request, onSaved }) {
+export function useFabricEditor({ request, onSaved, watermarked = false }) {
   const canvasElRef = useRef(null);
   const canvasRef = useRef(null);
   const undoStack = useRef([]);
@@ -424,8 +443,9 @@ export function useFabricEditor({ request, onSaved }) {
   const [snapToObjects, setSnapToObjects] = useState(true);
   const guideLinesRef = useRef([]);
   const bgHeightRef = useRef(CANVAS_H);
-  const isPaid = request?.status === 'Paid' || request?.status === 'Completed';
+  const isPaid = !watermarked;
   const isPaidRef = useRef(isPaid);
+
   useEffect(() => { isPaidRef.current = isPaid; }, [isPaid]);
   const snapToGridRef = useRef(snapToGrid);
   const snapToObjectsRef = useRef(snapToObjects);
@@ -446,7 +466,7 @@ export function useFabricEditor({ request, onSaved }) {
     });
     canvasRef.current = canvas;
 
-    const paid = request.status === 'Paid' || request.status === 'Completed';
+    const paid = !watermarked;
     const finishLoad = () => {
       if (!paid) {
         const wm = buildWatermark(CANVAS_W, bgHeightRef.current || CANVAS_H);
@@ -465,8 +485,11 @@ export function useFabricEditor({ request, onSaved }) {
       const objects = (layout && layout.length)
         ? buildObjectsFromLayout(layout, request, bgHeight)
         : buildDefaultObjects(request);
+      // Apply "Special Design Instructions" (italic / bold / cursive) to the text.
+      applyInstructions(objects, request.instructions);
       objects.forEach((obj) => canvas.add(obj));
 
+      
       await loadFontsForObjects(objects);
       objects.forEach((obj) => {
         if (['i-text', 'textbox', 'text'].includes(obj.type)) {
@@ -1442,10 +1465,18 @@ export function useFabricEditor({ request, onSaved }) {
     canvas.setWidth(w);
     canvas.setHeight(h);
 
+    // Export the RAW card (no preview overlay). The watermark for non-paying
+    // users is applied server-side on download, so it cannot be bypassed here.
+    const wmObjs = canvas.getObjects().filter((o) => o.name === WATERMARK_NAME);
+    const wmPrevVisible = wmObjs.map((o) => o.visible);
+    wmObjs.forEach((o) => { o.visible = false; });
+
     const prevBg = canvas.backgroundColor;
     if (format === 'png' && opts.transparent) canvas.backgroundColor = null;
     const dataUrl = canvas.toDataURL({ format: format === 'jpg' ? 'jpeg' : 'png', quality: 0.95, multiplier });
     if (format === 'png' && opts.transparent) canvas.backgroundColor = prevBg;
+
+    wmObjs.forEach((o, i) => { o.visible = wmPrevVisible[i]; });
 
     canvas.setZoom(prevZoom);
     canvas.setWidth(w * prevZoom);
@@ -1455,7 +1486,11 @@ export function useFabricEditor({ request, onSaved }) {
     return dataUrl;
   }, []);
 
+<<<<<<< HEAD
   const exportPdf = useCallback(async (multiplier = 2) => {
+=======
+     const exportPdf = useCallback(async (multiplier = 2, dataUrlOverride = null) => {
+>>>>>>> fc8deca61a42f0efd0ba83e011b646debda31a8a
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const { jsPDF } = await import('jspdf');
@@ -1463,16 +1498,24 @@ export function useFabricEditor({ request, onSaved }) {
     const w = CANVAS_W;
     const h = bgHeightRef.current || CANVAS_H;
 
-    // Capture at actual size, ignoring current view zoom
-    const prevZoom = canvas.getZoom();
-    canvas.setZoom(1);
-    canvas.setWidth(w);
-    canvas.setHeight(h);
-    const dataUrl = canvas.toDataURL({ format: 'png', quality: 0.95, multiplier });
-    canvas.setZoom(prevZoom);
-    canvas.setWidth(w * prevZoom);
-    canvas.setHeight(h * prevZoom);
-    canvas.requestRenderAll();
+    // Use a server-prepared image when given (so the watermark is baked in for
+    // non-paying users); otherwise render the raw card without the preview overlay.
+    let dataUrl = dataUrlOverride;
+    if (!dataUrl) {
+      const prevZoom = canvas.getZoom();
+      canvas.setZoom(1);
+      canvas.setWidth(w);
+      canvas.setHeight(h);
+      const wmObjs = canvas.getObjects().filter((o) => o.name === WATERMARK_NAME);
+      const wmPrevVisible = wmObjs.map((o) => o.visible);
+      wmObjs.forEach((o) => { o.visible = false; });
+      dataUrl = canvas.toDataURL({ format: 'png', quality: 0.95, multiplier });
+      wmObjs.forEach((o, i) => { o.visible = wmPrevVisible[i]; });
+      canvas.setZoom(prevZoom);
+      canvas.setWidth(w * prevZoom);
+      canvas.setHeight(h * prevZoom);
+      canvas.requestRenderAll();
+    }
 
     // Page sized in mm: A4 width, height follows the card's aspect ratio.
     // Image fills the whole page → opens at a normal 100%, no huge zoom.
@@ -1487,7 +1530,7 @@ export function useFabricEditor({ request, onSaved }) {
     return pdf;
   }, []);
 
-  const removeWatermark = useCallback(() => {
+    const removeWatermark = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     suppressHistory.current = true;
@@ -1497,6 +1540,23 @@ export function useFabricEditor({ request, onSaved }) {
     suppressHistory.current = false;
     canvas.requestRenderAll();
   }, []);
+
+  // Keep the watermark in sync when premium status resolves or the user upgrades.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const hasWm = canvas.getObjects().some((o) => o.name === WATERMARK_NAME);
+    if (watermarked && !hasWm) {
+      suppressHistory.current = true;
+      const wm = buildWatermark(CANVAS_W, bgHeightRef.current || CANVAS_H);
+      canvas.add(wm);
+      canvas.bringToFront(wm);
+      suppressHistory.current = false;
+      canvas.requestRenderAll();
+    } else if (!watermarked && hasWm) {
+      removeWatermark();
+    }
+  }, [watermarked, removeWatermark]);
 
   return {
     canvasElRef,

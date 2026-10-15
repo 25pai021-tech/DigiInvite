@@ -133,19 +133,19 @@
 .tpl-thumb-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  min-height: 240px;          /* keeps fallback & pre-load state from collapsing */
   background: var(--bg3);
   overflow: hidden;
-  /* fixed aspect-ratio gives a definite height, so `size` containment is safe
-     and 'cqb' (container height) can scale the overlay font like the editor */
-  container-type: size;
+  /* inline-size containment (not `size`) so the frame height can follow the
+     image's natural ratio without collapsing to zero */
+  container-type: inline-size;
   container-name: tplframe;
 }
 
 .tpl-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;               /* keep the image's true aspect ratio — never crop */
+  object-fit: contain;
   display: block;
   transition: transform 0.4s ease;
   pointer-events: none;

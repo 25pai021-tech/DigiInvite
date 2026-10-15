@@ -36,7 +36,9 @@ export default function Navbar() {
         {onEditorPage && (
           <li><NavLink to={location.pathname} onClick={() => setMenuOpen(false)}>Editor</NavLink></li>
         )}
-        <li><NavLink to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</NavLink></li>
+        {user && (
+          <li><NavLink to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</NavLink></li>
+        )}
         {user && (
           <li><NavLink to="/my-requests" onClick={() => setMenuOpen(false)}>My Requests</NavLink></li>
         )}

@@ -48,6 +48,8 @@ export default function MyRequests() {
     load();
   }, [user]);
 
+
+
   async function handleGenerate(requestId) {
     setGeneratingId(requestId);
     try {
@@ -56,8 +58,14 @@ export default function MyRequests() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ request_id: requestId }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        alert(`${data.detail || 'You need Premium to continue.'}\n\nGo to the Pricing page to upgrade to Premium.`);
+        return;
+      }
+
       if (!res.ok) throw new Error(data.detail || 'Could not generate your card.');
+
 
       // mark it Draft immediately — no admin step involved
       const { error } = await supabase
@@ -132,7 +140,8 @@ export default function MyRequests() {
     setPublishingId(request.id);
     try {
       const res = await publishInvitation(request.id);
-      const publicUrl = `${window.location.origin}${res.public_url}`;
+      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
+      const publicUrl = `${SITE_URL}${res.public_url}`;
       setPublishModal({
         id: request.id,
         slug: res.public_slug,
@@ -161,6 +170,10 @@ export default function MyRequests() {
         )
       );
     } catch (err) {
+      if (err?.status === 402) {
+        alert(`${err.message || 'Publishing is a Premium feature.'}\n\nGo to the Pricing page to upgrade to Premium.`);
+        return;
+      }
       alert(err.message || 'Failed to publish invitation.');
     } finally {
       setPublishingId(null);

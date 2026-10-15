@@ -1,34 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { fetchLandingStats } from '../../lib/fetchLandingStats';
+import React from 'react';
 import './Stats.css';
 
+// Honest, concrete facts about what DigiInvite actually does — no fabricated
+// metrics. Each one maps to a real capability in the product.
+const items = [
+  {
+    num: '10+',
+    label: 'Indian Languages',
+    desc: 'Create in your mother tongue — Hindi, Gujarati, Tamil & more',
+  },
+  {
+    num: 'AI',
+    label: 'Generated Designs',
+    desc: 'A unique, high-resolution background for every event',
+  },
+  {
+    num: '100%',
+    label: 'Editable on Canvas',
+    desc: 'Every text, font, colour and photo is yours to change',
+  },
+  {
+    num: 'UPI',
+    label: 'Secure Checkout',
+    desc: 'Razorpay payments — UPI, cards & net banking',
+  },
+];
+
 export default function Stats() {
-  const [stats, setStats] = useState({
-    curated_designs: 0,
-    cultural_traditions: 0,
-    rsvp_response_rate: 0,
-    ai_generation_speed: 0,
-  });
-
-  useEffect(() => {
-    let active = true;
-    fetchLandingStats().then((data) => {
-      if (active && data) {
-        setStats(data);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const items = [
-    { num: stats.curated_designs, label: 'Curated Designs', desc: 'Bespoke event themes & styles' },
-    { num: stats.cultural_traditions, label: 'Cultural Traditions', desc: 'Pan-Indian & international events' },
-    { num: stats.rsvp_response_rate === 0 ? '0' : `${stats.rsvp_response_rate}%`, label: 'RSVP Response Rate', desc: 'Via seamless 1-tap WhatsApp link' },
-    { num: stats.ai_generation_speed === 0 ? '0' : `< ${stats.ai_generation_speed}s`, label: 'AI Generation Speed', desc: 'Prompt to tailored card draft' },
-  ];
-
   return (
     <section className="stats-bar" aria-label="Platform Highlights">
       <div className="stats-inner section-inner">

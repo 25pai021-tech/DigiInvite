@@ -75,11 +75,14 @@ export default function LanguagesSection() {
           <span className="section-tag">Cultural Heritage &amp; Languages</span>
           <h2 className="section-title">
             Celebrate in Your Mother Tongue. <br />
-            20+ Indian &amp; Global Languages.
+            10 Indian Languages.
           </h2>
           <p className="section-sub">
-            From traditional Shlokas and regional wedding phrasing to modern bilingual layouts—DigiInvite honors every cultural tradition.
+            Write your invitation in Hindi, Gujarati, Tamil, Telugu, Marathi and more —
+            with traditional phrasing and the right regional script.
           </p>
+          
+        
         </div>
 
         {/* Language Tabs */}

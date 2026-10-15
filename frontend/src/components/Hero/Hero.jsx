@@ -14,7 +14,6 @@ const THEMES = [
     date: 'Saturday, November 28, 2026',
     time: '6:30 PM Onwards',
     venue: 'The Leela Palace, Udaipur',
-    rsvpCount: '184 Confirmed',
     styleClass: 'theme-royal',
     ornament: '✦ ॐ ✦',
   },
@@ -29,7 +28,6 @@ const THEMES = [
     date: 'Sunday, December 14, 2026',
     time: '7:00 PM Onwards',
     venue: 'JW Marriott Resort, Goa',
-    rsvpCount: '128 Confirmed',
     styleClass: 'theme-botanical',
     ornament: '🍃 ❀ 🍃',
   },
@@ -44,7 +42,6 @@ const THEMES = [
     date: 'Friday, January 15, 2027',
     time: '8:00 PM Onwards',
     venue: 'Taj Mahal Palace, Mumbai',
-    rsvpCount: '210 Confirmed',
     styleClass: 'theme-emerald',
     ornament: '✨ ⚜ ✨',
   },
@@ -92,8 +89,9 @@ export default function Hero() {
           </h1>
 
           <p className="hero-sub">
-            Craft stunning, culturally rich digital invitations in seconds with AI.
-            Fine-tune every element on our canvas editor, export high-res prints, and track guest RSVPs directly via WhatsApp.
+            Generate a unique, culturally rich invitation with AI, fine-tune every
+            detail on our canvas editor, then share it as a beautiful web page or
+            download it in print-ready quality.
           </p>
 
           <div className="hero-cta-group">
@@ -112,10 +110,10 @@ export default function Hero() {
               <span>Royal &amp; Cultural Motifs</span>
             </div>
             <div className="trust-pill">
-              <span>1-Tap WhatsApp RSVP</span>
+              <span>Shareable WhatsApp Invite</span>
             </div>
             <div className="trust-pill">
-              <span>Ultra-HD Print &amp; Mobile</span>
+              <span>PNG, JPG &amp; PDF Downloads</span>
             </div>
           </div>
         </div>
@@ -189,7 +187,7 @@ export default function Hero() {
               <div className="card-footer">
                 <div className="card-live-rsvp">
                   <span className="live-dot" />
-                  <span>{currentTheme.rsvpCount}</span>
+                  <span>Live Preview</span>
                 </div>
 
                 <button

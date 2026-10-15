@@ -13,6 +13,7 @@ import LayersPanel from './LayersPanel';
 import ContextMenu from './ContextMenu';
 import Rulers from './Rulers';
 import { publishInvitation, getWhatsAppShareUrl } from '../../lib/publishInvitation';
+import { fetchPremiumStatus, upgradeToPremium, payForTemplate, stampDownload } from '../../lib/premium';
 import './editor.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -30,7 +31,22 @@ export default function Editor() {
   const [publishModal, setPublishModal] = useState(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [paying, setPaying] = useState(false);
   const canvasWrapRef = useRef(null);
+
+  // Has this specific card already been paid for (₹99 one-card unlock)?
+  const isPaidCard = request?.status === 'Paid';
+
+  // Load the signed-in user's Premium status (controls the watermark & publish).
+  useEffect(() => {
+    let active = true;
+    fetchPremiumStatus().then((s) => {
+      if (active) setIsPremiumUser(Boolean(s?.is_premium));
+    });
+    return () => { active = false; };
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user && request && !request.is_template) {
@@ -49,7 +65,7 @@ export default function Editor() {
         // 1. First check if requestId matches an invitation_requests row
         const { data: reqData } = await supabase
           .from('invitation_requests')
-          .select('*, templates(text_layout)')
+          .select('*, templates(text_layout, is_premium)')
           .eq('id', requestId)
           .maybeSingle();
 
@@ -90,6 +106,7 @@ export default function Editor() {
             generated_image_url: tplData.config?.full_image_url || tplData.thumbnail_url,
             templates: {
               text_layout: tplData.text_layout || [],
+              is_premium: tplData.is_premium || false,
             },
             editor_state: tplData.editor_state || null,
             status: 'Draft',
@@ -118,7 +135,11 @@ export default function Editor() {
     };
   }, [requestId]);
 
-  const editor = useFabricEditor({ request });
+  // A premium template shows a watermark for free users. It is removed when the
+  // user is Premium (free) OR they pay the one-time ₹99 fee for this card.
+  const isPremiumTemplate = Boolean(request?.templates?.is_premium);
+  const watermarked = isPremiumTemplate && !isPremiumUser && !isPaidCard;
+  const editor = useFabricEditor({ request, watermarked });
 
   useEffect(() => {
     if (editor.fitToScreen && canvasWrapRef.current) {
@@ -144,7 +165,6 @@ export default function Editor() {
     return <div style={centerStyle}>{error}</div>;
   }
   if (!request) return null;
-  const isPaid = request.status === 'Paid' || request.status === 'Completed';
 
   const activeType = editor.activeObject?.type;
   const isText =
@@ -155,76 +175,81 @@ export default function Editor() {
   const isImage = activeType === 'image';
   const isShapeLike = editor.activeObject && !isText && !isImage;
 
-  const handleDownload = (format, opts = {}) => {
-    const dataUrl = editor.exportImage(format, 3, opts);
+  // Non-paying users on a premium template get the watermark baked in server-side.
+  const needsServerStamp = isPremiumTemplate && !isPremiumUser && !isPaidCard;
+
+  const handleDownload = async (format, opts = {}) => {
+    let dataUrl = editor.exportImage(format, 3, opts);
     if (!dataUrl) return;
+    if (needsServerStamp) {
+      try {
+        dataUrl = await stampDownload(request.id, dataUrl, format === 'jpg' ? 'jpg' : 'png');
+      } catch (e) {
+        alert(e.message || 'Could not prepare the download. Please try again.');
+        return;
+      }
+    }
     const link = document.createElement('a');
     link.href = dataUrl;
     link.download = `${(request.event_name || 'invitation').replace(/\s+/g, '-')}.${format}`;
     link.click();
   };
 
-    const handlePay = async () => {
+    // One-time upgrade to Premium — removes the watermark on premium templates and
+  // unlocks unlimited AI generation + publishing.
+  const handleUpgrade = async () => {
+    if (upgrading) return;
+    setUpgrading(true);
     try {
-      // must be a saved request (not an unsaved template)
-      if (request.is_template) {
-        alert('Please click "Save Edits" first, then pay.');
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) { navigate('/login'); return; }
-
-      // 1) create the order on our backend
-      const orderRes = await fetch(`${API_URL}/createOrder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ request_id: request.id }),
-      });
-      if (!orderRes.ok) throw new Error('Could not start payment.');
-      const order = await orderRes.json();
-
-      // 2) open the Razorpay popup
-      const options = {
-        key: order.key_id,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'DigiInvite',
-        description: 'Invitation download',
-        order_id: order.order_id,
-        theme: { color: '#7a1030' },
-        handler: async (response) => {
-          // 3) verify on our backend → marks the request Paid
-          const verifyRes = await fetch(`${API_URL}/verifyPayment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({
-              request_id: request.id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-          if (verifyRes.ok) {
-            setRequest((prev) => ({ ...prev, status: 'Paid' })); // unlocks downloads
-            editor.removeWatermark();
-            alert('Payment successful! You can now download your card.');
-          } else {
-            alert('Payment could not be verified.');
-          }
-        },
-      };
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      await upgradeToPremium();
+      setIsPremiumUser(true);        // the editor hook drops the watermark live
+      editor.removeWatermark?.();
+      alert('You are now Premium! The watermark has been removed.');
     } catch (err) {
-      console.error(err);
-      alert(err.message || 'Payment failed to start.');
+      if (err?.message && err.message !== 'Upgrade cancelled.') {
+        alert(err.message);
+      }
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+
+  // Pay ₹99 once to remove the watermark on THIS card only (free users).
+  const handlePayForCard = async () => {
+    if (paying) return;
+    if (request.is_template) {
+      alert('Please click "Save Edits" first to save this card, then remove the watermark.');
+      return;
+    }
+    setPaying(true);
+    try {
+      await payForTemplate(request.id);
+      setRequest((prev) => ({ ...prev, status: 'Paid' })); // drops the watermark live
+      editor.removeWatermark?.();
+      alert('Payment successful! The watermark has been removed from this card.');
+    } catch (err) {
+      if (err?.message && err.message !== 'Payment cancelled.') {
+        alert(err.message);
+      }
+    } finally {
+      setPaying(false);
     }
   };
 
   const handleDownloadPdf = async () => {
-    const pdf = await editor.exportPdf(3);
+    let override = null;
+    if (needsServerStamp) {
+      const png = editor.exportImage('png', 3);
+      if (!png) return;
+      try {
+        override = await stampDownload(request.id, png, 'png');
+      } catch (e) {
+        alert(e.message || 'Could not prepare the download. Please try again.');
+        return;
+      }
+    }
+    const pdf = await editor.exportPdf(3, override);
     pdf?.save(`${(request.event_name || 'invitation').replace(/\s+/g, '-')}.pdf`);
   };
 
@@ -233,13 +258,18 @@ export default function Editor() {
       alert('Please click "Save Edits" first to save your invitation, then publish.');
       return;
     }
+    if (!isPremiumUser) {
+      alert('Publishing is a Premium feature. Upgrade to Premium to publish your invitation.');
+      return;
+    }
     setIsPublishing(true);
     try {
       if (editor.isDirty) {
         await editor.save();
       }
       const res = await publishInvitation(request.id);
-      const fullUrl = `${window.location.origin}${res.public_url}`;
+      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
+      const fullUrl = `${SITE_URL}${res.public_url}`;
       setPublishModal({
         slug: res.public_slug,
         title: request.event_name || 'My Celebration',
@@ -442,19 +472,47 @@ export default function Editor() {
           {isPublishing ? 'Publishing…' : (request.published || request.editor_state?.publish_info?.published) ? 'Publish / Share Details' : 'Publish Invitation'}
         </button>
 
-        {isPaid ? (
-          <div className="editor-toolbar-group">
-            <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
-            <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
-            <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
-            <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
+        <div className="editor-toolbar-group">
+          <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
+          <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
+          <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
+          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
+        </div>
+
+        {watermarked && (
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignItems: 'center' }}>
+            <button
+              onClick={handlePayForCard}
+              disabled={paying}
+              title="Pay ₹99 once to remove the watermark on this card"
+              style={{
+                background: '#16a34a', color: '#fff', border: 'none',
+                borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600,
+                cursor: paying ? 'default' : 'pointer', opacity: paying ? 0.6 : 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {paying ? 'Opening…' : '✦ Remove watermark – ₹99'}
+            </button>
+            <button
+              onClick={handleUpgrade}
+              disabled={upgrading}
+              title="Get Premium (₹499) — watermark-free on all templates, forever"
+              style={{
+                background: 'transparent', color: 'var(--purple, #7a1030)',
+                border: '1px solid var(--purple, #7a1030)',
+                borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600,
+                cursor: upgrading ? 'default' : 'pointer', opacity: upgrading ? 0.6 : 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {upgrading ? 'Opening…' : 'or get Premium ₹499'}
+            </button>
           </div>
-        ) : (
-          <button className="editor-btn editor-btn-green" onClick={handlePay}>
-            Pay to Download
-          </button>
         )}
       </div>
+
+
 
       {/* Publish Result Modal */}
       {publishModal && (
@@ -606,9 +664,9 @@ export default function Editor() {
       )}
 
       <p className="editor-footnote">
-        {isPaid
-          ? 'You have paid — you can edit and download this card anytime, in PNG, transparent PNG, JPG, or PDF.'
-          : 'You can preview and edit your card. Downloading unlocks after payment.'}
+        {watermarked
+          ? 'This is a premium template, so your card shows a watermark. Pay ₹99 once to remove it from this card, or get Premium (₹499) to remove watermarks on all premium templates forever.'
+          : 'You can edit and download this card anytime, in PNG, transparent PNG, JPG, or PDF.'}
       </p>
     </div>
   );

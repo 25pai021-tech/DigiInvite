@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-<<<<<<< Updated upstream
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
 import { fetchPremiumStatus } from '../lib/premium';
-=======
->>>>>>> Stashed changes
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
 
@@ -16,15 +13,12 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [invitationCount, setInvitationCount] = useState(0);
-<<<<<<< Updated upstream
   const [recentInvites, setRecentInvites] = useState([]);
   const [publishingId, setPublishingId] = useState(null);
   const [publishModal, setPublishModal] = useState(null);
   const [copied, setCopied] = useState(false);
   const [premium, setPremium] = useState(null);
   const isPremium = Boolean(premium?.is_premium);
-=======
->>>>>>> Stashed changes
 
   const STATS = [
     { key: 'invitations', label: 'My Invitations', value: invitationCount, icon: <InvitationIcon />, accent: '#7dd3fc' },

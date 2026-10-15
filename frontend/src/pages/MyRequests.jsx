@@ -66,14 +66,8 @@ export default function MyRequests() {
 
       if (!res.ok) throw new Error(data.detail || 'Could not generate your card.');
 
-
-      // mark it Draft immediately — no admin step involved
-      const { error } = await supabase
-        .from('invitation_requests')
-        .update({ status: 'Draft' })
-        .eq('id', requestId);
-      if (error) throw new Error('Card generated, but could not update its status.');
-
+      // The backend already marks the card Draft when it saves the image,
+      // so the client no longer writes `status` (that write was blocked by RLS).
       setRequests((prev) =>
         prev.map((r) =>
           r.id === requestId ? { ...r, generated_image_url: data.image_url, status: 'Draft' } : r

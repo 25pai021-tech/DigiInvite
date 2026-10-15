@@ -1185,9 +1185,15 @@ def generate_card(body: GenerateCardIn):
     )
     image_url = supabase.storage.from_("design-uploads").get_public_url(path)
 
-    # 6. store the link on the request
+    # 6. store the link on the request (and mark it ready).
+    #    The backend sets status here with the service key, so the client no
+    #    longer needs write access to `status` (that write was failing after
+    #    the RLS hardening and caused "could not update its status").
+    update_fields = {"generated_image_url": image_url}
+    if row.get("status") != "Paid":
+        update_fields["status"] = "Draft"
     supabase.table("invitation_requests").update(
-        {"generated_image_url": image_url}
+        update_fields
     ).eq("id", body.request_id).execute()
 
     # 6b. Count this as one lifetime AI generation (first time only).

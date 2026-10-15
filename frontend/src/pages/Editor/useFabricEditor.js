@@ -1486,11 +1486,7 @@ export function useFabricEditor({ request, onSaved, watermarked = false }) {
     return dataUrl;
   }, []);
 
-<<<<<<< HEAD
-  const exportPdf = useCallback(async (multiplier = 2) => {
-=======
-     const exportPdf = useCallback(async (multiplier = 2, dataUrlOverride = null) => {
->>>>>>> fc8deca61a42f0efd0ba83e011b646debda31a8a
+  const exportPdf = useCallback(async (multiplier = 2, dataUrlOverride = null) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const { jsPDF } = await import('jspdf');
@@ -1530,7 +1526,7 @@ export function useFabricEditor({ request, onSaved, watermarked = false }) {
     return pdf;
   }, []);
 
-    const removeWatermark = useCallback(() => {
+  const removeWatermark = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     suppressHistory.current = true;

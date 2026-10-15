@@ -474,12 +474,23 @@ export default function Editor() {
           </button>
         )}
 
-        <div className="editor-toolbar-group">
-          <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
-          <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
-          <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
-          <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
-        </div>
+        {/* Downloads are hidden on premium templates until the card is paid
+            (₹99) or the user is Premium — so no one can download even the
+            watermarked image and try to clean it with a third-party tool. */}
+        {!watermarked ? (
+          <div className="editor-toolbar-group">
+            <button className="editor-btn" onClick={() => handleDownload('png')}>PNG</button>
+            <button className="editor-btn" onClick={() => handleDownload('png', { transparent: true })}>PNG (transparent)</button>
+            <button className="editor-btn" onClick={() => handleDownload('jpg')}>JPG</button>
+            <button className="editor-btn" onClick={handleDownloadPdf}>PDF</button>
+          </div>
+        ) : (
+          <div className="editor-toolbar-group" style={{ opacity: 0.85 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted, #888)', padding: '6px 8px', whiteSpace: 'nowrap' }}>
+              🔒 Download locked — pay ₹99 or get Premium
+            </span>
+          </div>
+        )}
 
         {watermarked && (
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignItems: 'center' }}>
@@ -667,7 +678,7 @@ export default function Editor() {
 
       <p className="editor-footnote">
         {watermarked
-          ? 'This is a premium template, so your card shows a watermark. Pay ₹99 once to remove it from this card, or get Premium (₹499) to remove watermarks on all premium templates forever.'
+          ? 'This is a premium template, so your card shows a watermark and downloads are locked. Pay ₹99 once to unlock and download this card watermark-free, or get Premium (₹499) to unlock all premium templates forever.'
           : 'You can edit and download this card anytime, in PNG, transparent PNG, JPG, or PDF.'}
       </p>
     </div>

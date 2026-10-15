@@ -2,29 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-<<<<<<< Updated upstream
-import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
 import { fetchPremiumStatus } from '../lib/premium';
-=======
->>>>>>> Stashed changes
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
 
-
 export default function Dashboard() {
-  
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [invitationCount, setInvitationCount] = useState(0);
-<<<<<<< Updated upstream
-  const [recentInvites, setRecentInvites] = useState([]);
-  const [publishingId, setPublishingId] = useState(null);
-  const [publishModal, setPublishModal] = useState(null);
-  const [copied, setCopied] = useState(false);
   const [premium, setPremium] = useState(null);
   const isPremium = Boolean(premium?.is_premium);
-=======
->>>>>>> Stashed changes
 
   const STATS = [
     { key: 'invitations', label: 'My Invitations', value: invitationCount, icon: <InvitationIcon />, accent: '#7dd3fc' },
@@ -32,7 +19,6 @@ export default function Dashboard() {
     { key: 'drafts', label: 'Saved Drafts', value: 0, icon: <DraftIcon />, accent: '#fb923c' },
     { key: 'downloads', label: 'Downloads', value: 0, icon: <DownloadIcon />, accent: '#f472b6' },
   ];
-
 
   useEffect(() => {
     if (!user) return;
@@ -49,69 +35,11 @@ export default function Dashboard() {
     loadData();
   }, [user]);
 
-<<<<<<< Updated upstream
   useEffect(() => {
     if (!user) return;
     fetchPremiumStatus().then(setPremium);
   }, [user]);
 
-
-  async function handlePublish(invite) {
-    setPublishingId(invite.id);
-    try {
-      const res = await publishInvitation(invite.id);
-      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
-      const publicUrl = `${SITE_URL}${res.public_url}`;
-      setPublishModal({
-        id: invite.id,
-        slug: res.public_slug,
-        title: invite.event_name || 'My Invitation',
-        url: publicUrl,
-      });
-
-      setRecentInvites((prev) =>
-        prev.map((r) =>
-          r.id === invite.id
-            ? {
-                ...r,
-                published: true,
-                public_slug: res.public_slug,
-                published_at: res.published_at,
-                editor_state: {
-                  ...(typeof r.editor_state === 'object' ? r.editor_state : {}),
-                  publish_info: {
-                    public_slug: res.public_slug,
-                    published: true,
-                    published_at: res.published_at,
-                  },
-                },
-              }
-            : r
-        )
-      );
-    } catch (err) {
-      alert(err.message || 'Failed to publish invitation.');
-    } finally {
-      setPublishingId(null);
-    }
-  }
-
-  function handleCopy(url) {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function isPublished(r) {
-    return Boolean(r.published || r.editor_state?.publish_info?.published);
-  }
-
-  function getSlug(r) {
-    return r.public_slug || r.editor_state?.publish_info?.public_slug;
-  }
-
-=======
->>>>>>> Stashed changes
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
@@ -159,8 +87,6 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-
-
       </div>
     </div>
   );

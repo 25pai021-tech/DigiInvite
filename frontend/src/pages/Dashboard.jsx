@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+<<<<<<< Updated upstream
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
 import { fetchPremiumStatus } from '../lib/premium';
+=======
+>>>>>>> Stashed changes
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
 
@@ -13,12 +16,15 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [invitationCount, setInvitationCount] = useState(0);
+<<<<<<< Updated upstream
   const [recentInvites, setRecentInvites] = useState([]);
   const [publishingId, setPublishingId] = useState(null);
   const [publishModal, setPublishModal] = useState(null);
   const [copied, setCopied] = useState(false);
   const [premium, setPremium] = useState(null);
   const isPremium = Boolean(premium?.is_premium);
+=======
+>>>>>>> Stashed changes
 
   const STATS = [
     { key: 'invitations', label: 'My Invitations', value: invitationCount, icon: <InvitationIcon />, accent: '#7dd3fc' },
@@ -38,20 +44,12 @@ export default function Dashboard() {
         .eq('user_id', user.id);
 
       if (!error) setInvitationCount(count || 0);
-
-      const { data: list } = await supabase
-        .from('invitation_requests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(4);
-
-      setRecentInvites(list || []);
     }
 
     loadData();
   }, [user]);
 
+<<<<<<< Updated upstream
   useEffect(() => {
     if (!user) return;
     fetchPremiumStatus().then(setPremium);
@@ -112,6 +110,8 @@ export default function Dashboard() {
     return r.public_slug || r.editor_state?.publish_info?.public_slug;
   }
 
+=======
+>>>>>>> Stashed changes
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
@@ -160,261 +160,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Recent Invitations & Publishing */}
-        {recentInvites.length > 0 && (
-          <div style={{ marginTop: 40 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, margin: 0 }}>
-                My Saved Invitations
-              </h2>
-              <button
-                onClick={() => navigate('/my-requests')}
-                style={{ background: 'transparent', border: 'none', color: '#7a1030', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}
-              >
-                View All Requests →
-              </button>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-              {recentInvites.map((inv) => {
-                const published = isPublished(inv);
-                const slug = getSlug(inv);
-
-                return (
-                  <div
-                    key={inv.id}
-                    style={{
-                      background: 'var(--card-bg, #ffffff)',
-                      border: '1px solid var(--card-border, #eee)',
-                      borderRadius: 16,
-                      padding: 20,
-                      boxShadow: 'var(--card-shadow, 0 4px 15px rgba(0,0,0,0.04))',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                        <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700 }}>
-                          {inv.event_name || 'Celebration'}
-                        </h3>
-                        {published ? (
-                          <span style={{ background: '#7a1030', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999 }}>
-                            LIVE
-                          </span>
-                        ) : (
-                          <span style={{ background: '#e5e7eb', color: '#555', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999 }}>
-                            {inv.status}
-                          </span>
-                        )}
-                      </div>
-
-                      <p style={{ color: 'var(--muted, #888)', fontSize: 13, margin: '0 0 12px' }}>
-                        {inv.date} · {inv.venue || 'No venue set'}
-                      </p>
-
-                      {published && slug && (
-                        <div style={{ marginBottom: 14, fontSize: 12 }}>
-                          <a
-                            href={`/invite/${slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#7a1030', fontWeight: 600, textDecoration: 'none' }}
-                          >
-                            🔗 /invite/{slug}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button
-                        onClick={() => navigate(`/editor/${inv.id}`)}
-                        style={{
-                          flex: 1,
-                          background: 'var(--purple, #6d28d9)',
-                          color: '#fff',
-                          border: 'none',
-                          padding: '9px 12px',
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Edit Invitation
-                      </button>
-
-                      <button
-                        onClick={() => handlePublish(inv)}
-                        disabled={publishingId === inv.id}
-                        style={{
-                          flex: 1,
-                          background: '#7a1030',
-                          color: '#fff',
-                          border: 'none',
-                          padding: '9px 12px',
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {publishingId === inv.id ? 'Publishing…' : published ? 'Share Page' : 'Publish Invitation'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Publish Modal */}
-        {publishModal && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999,
-              padding: 20,
-            }}
-            onClick={() => setPublishModal(null)}
-          >
-            <div
-              style={{
-                background: '#ffffff',
-                borderRadius: 20,
-                padding: '32px 28px',
-                maxWidth: 480,
-                width: '100%',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
-                border: '1px solid #f3e8eb',
-                color: '#2c2523',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🎉</div>
-                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, margin: '0 0 6px', color: '#7a1030' }}>
-                  Invitation is Live!
-                </h2>
-                <p style={{ color: '#666', fontSize: 14, margin: 0 }}>
-                  Your smart adaptive mini-website is created and ready to share.
-                </p>
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', textTransform: 'uppercase' }}>
-                  Public Website Link
-                </label>
-                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <input
-                    type="text"
-                    readOnly
-                    value={publishModal.url}
-                    style={{
-                      flex: 1,
-                      padding: '10px 14px',
-                      borderRadius: 10,
-                      border: '1px solid #d1d5db',
-                      fontSize: 14,
-                      background: '#f9fafb',
-                    }}
-                    onClick={(e) => e.target.select()}
-                  />
-                  <button
-                    onClick={() => handleCopy(publishModal.url)}
-                    style={{
-                      background: copied ? '#16a34a' : '#7a1030',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '10px 18px',
-                      borderRadius: 10,
-                      cursor: 'pointer',
-                      fontSize: 14,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {copied ? '✓ Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20 }}>
-                <a
-                  href={getWhatsAppShareUrl(publishModal.title, publishModal.url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    background: '#25d366',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 18px',
-                    borderRadius: 10,
-                    textDecoration: 'none',
-                    flex: 1,
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  💬 Share on WhatsApp
-                </a>
-
-                <a
-                  href={publishModal.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    background: '#2563eb',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 18px',
-                    borderRadius: 10,
-                    textDecoration: 'none',
-                    flex: 1,
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  🔗 Open Live Page
-                </a>
-              </div>
-
-              <button
-                onClick={() => setPublishModal(null)}
-                style={{
-                  background: '#e5e7eb',
-                  color: '#333',
-                  border: 'none',
-                  padding: '10px 18px',
-                  borderRadius: 10,
-                  width: '100%',
-                  marginTop: 12,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                }}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

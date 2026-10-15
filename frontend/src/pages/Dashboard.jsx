@@ -49,7 +49,6 @@ export default function Dashboard() {
     loadData();
   }, [user]);
 
-<<<<<<< Updated upstream
   useEffect(() => {
     if (!user) return;
     fetchPremiumStatus().then(setPremium);
@@ -110,8 +109,6 @@ export default function Dashboard() {
     return r.public_slug || r.editor_state?.publish_info?.public_slug;
   }
 
-=======
->>>>>>> Stashed changes
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);

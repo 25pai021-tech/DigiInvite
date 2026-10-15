@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ICON_CATEGORIES } from './iconLibrary';
+import { STICKER_CATEGORIES } from './stickerLibrary';
 import { SUPPORTED_LANGUAGES } from './languageService';
 
-const TABS = ['Text', 'Uploads', 'Shapes', 'Icons', 'Background',  'Stickers', 'Language'];
+const TABS = ['Text', 'Uploads', 'Shapes', 'Icons', 'Background', 'Stickers', 'Language'];
 const SWATCHES = ['#FFFFFF', '#F5F0FF', '#1a1035', '#0D0A1A', '#6C3BFF', '#D4AF37', '#22c55e', '#ef4444'];
 const GRADIENTS = [
   ['#6C3BFF', '#8B5CFF'],
@@ -16,9 +17,9 @@ export default function EditorSidebar({
   onAddImageFile,
   onAddShape,
   onAddIcon,
+  onAddSticker,
   onSetBackgroundColor,
   onSetBackgroundGradient,
-  onSetBackgroundImageFile,
   activeLanguage = 'en',
   translationMode = 'replace',
   onTranslateInvitation,
@@ -27,9 +28,9 @@ export default function EditorSidebar({
 }) {
   const [tab, setTab] = useState('Text');
   const [iconCategory, setIconCategory] = useState(ICON_CATEGORIES[0].name);
+  const [stickerCategory, setStickerCategory] = useState(STICKER_CATEGORIES[0].name);
   const [selectedTargetLang, setSelectedTargetLang] = useState('hi');
   const uploadRef = useRef(null);
-  const bgRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
 
   const handleDrop = (e) => {
@@ -40,6 +41,7 @@ export default function EditorSidebar({
   };
 
   const activeIconCategory = ICON_CATEGORIES.find((c) => c.name === iconCategory);
+  const activeStickerCategory = STICKER_CATEGORIES.find((c) => c.name === stickerCategory);
 
   return (
     <aside className="editor-sidebar">
@@ -138,18 +140,28 @@ export default function EditorSidebar({
                 />
               ))}
             </div>
-
-            
           </div>
         )}
 
-        
-
         {tab === 'Stickers' && (
-          <p className="editor-sidebar-hint">
-            A dedicated sticker pack is coming soon — the Icons tab already works as decorative stickers
-            in the meantime (add one, then resize/rotate/recolor it freely).
-          </p>
+          <div>
+            <select
+              value={stickerCategory}
+              onChange={(e) => setStickerCategory(e.target.value)}
+              className="editor-icon-category-select"
+            >
+              {STICKER_CATEGORIES.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <div className="editor-sticker-grid">
+              {activeStickerCategory.stickers.map((s) => (
+                <button key={s.id} title={s.label} onClick={() => onAddSticker?.(s.src)}>
+                  <img src={s.src} alt={s.label} />
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {tab === 'Language' && (

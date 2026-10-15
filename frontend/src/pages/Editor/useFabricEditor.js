@@ -17,7 +17,7 @@ import {
   cleanFontName,
 } from './fontManager';
 import { addMapQr } from './addMapQr';
-   
+
 const CANVAS_W = 800;
 const CANVAS_H = 1000;
 // Correction for the OCR-derived text sizes, which run larger than the original.
@@ -140,7 +140,7 @@ function buildDefaultObjects(request) {
   initTextObjectMetadata(title, 'title');
   objects.push(title);
 
- // Couple names (wedding / engagement / anniversary)
+  // Couple names (wedding / engagement / anniversary)
   const COUPLE_EVENTS = ['wedding', 'engagement', 'anniversary'];
   if (
     COUPLE_EVENTS.includes((request.event_type || '').toLowerCase()) &&
@@ -169,7 +169,7 @@ function buildDefaultObjects(request) {
     `On ${formatDate(request.date)}`,
     request.time ? `at ${formatTime(request.time)}` : '',
   ].filter(Boolean).join('\n');
-  
+
   if (dateLine) {
     const dateObj = new fabric.IText(dateLine, {
       left: CANVAS_W / 2,
@@ -503,7 +503,7 @@ export function useFabricEditor({ request, onSaved }) {
       }
     };
 
-        const setupWithBackground = () => {
+    const setupWithBackground = () => {
       if (request.generated_image_url) {
         fabric.Image.fromURL(
           request.generated_image_url,
@@ -749,7 +749,7 @@ export function useFabricEditor({ request, onSaved }) {
     canvas.setHeight(bgHeightRef.current * clamped);
     setZoomState(clamped);
   }, []);
-  
+
   const zoomIn = useCallback(() => setZoom(zoom + 0.1), [zoom, setZoom]);
   const zoomOut = useCallback(() => setZoom(zoom - 0.1), [zoom, setZoom]);
   const fitToScreen = useCallback((containerWidth) => {
@@ -1022,6 +1022,30 @@ export function useFabricEditor({ request, onSaved }) {
     reader.readAsDataURL(file);
   }, []);
 
+  // Adds a full-colour sticker (SVG/PNG from a URL or data URI) to the card.
+  // Unlike icons, stickers keep their own colours and are not recoloured.
+  const addSticker = useCallback((src) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !src) return;
+    fabric.Image.fromURL(
+      src,
+      (img) => {
+        img.scaleToWidth(160);
+        img.set({
+          left: CANVAS_W / 2,
+          top: (bgHeightRef.current || CANVAS_H) / 2,
+          originX: 'center',
+          originY: 'center',
+          name: 'sticker',
+        });
+        canvas.add(img);
+        canvas.setActiveObject(img);
+        canvas.requestRenderAll();
+      },
+      { crossOrigin: 'anonymous' }
+    );
+  }, []);
+
   const replaceActiveImage = useCallback((file) => {
     const canvas = canvasRef.current;
     const obj = canvas?.getActiveObject();
@@ -1127,7 +1151,7 @@ export function useFabricEditor({ request, onSaved }) {
   }, [undo, redo, duplicateActive, deleteActive]);
 
   // ── translation actions ──────────────────────────────────────
-   const translateInvitation = useCallback(async (targetLang, mode = 'replace') => {
+  const translateInvitation = useCallback(async (targetLang, mode = 'replace') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1407,7 +1431,7 @@ export function useFabricEditor({ request, onSaved }) {
   }, [isDirty, save]);
 
   // ── export for download ─────────────────────────────────────
-    const exportImage = useCallback((format = 'png', multiplier = 2, opts = {}) => {
+  const exportImage = useCallback((format = 'png', multiplier = 2, opts = {}) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
@@ -1431,7 +1455,7 @@ export function useFabricEditor({ request, onSaved }) {
     return dataUrl;
   }, []);
 
-     const exportPdf = useCallback(async (multiplier = 2) => {
+  const exportPdf = useCallback(async (multiplier = 2) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const { jsPDF } = await import('jspdf');
@@ -1529,6 +1553,7 @@ export function useFabricEditor({ request, onSaved }) {
     addIconFromSvg,
     recolorIcon,
     addImageFromFile,
+    addSticker,
     replaceActiveImage,
     setBackgroundColor,
     setBackgroundGradient,

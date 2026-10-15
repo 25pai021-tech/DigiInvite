@@ -509,3 +509,21 @@
   box-shadow: 0 0 0 2px var(--purple-glow);
 }
 
+.editor-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.editor-sticker-grid button {
+  background: #fff;
+  border: 1px solid #e6d9dd;
+  border-radius: 10px;
+  padding: 6px;
+  cursor: pointer;
+}
+.editor-sticker-grid img {
+  width: 100%;
+  height: 56px;
+  object-fit: contain;
+}

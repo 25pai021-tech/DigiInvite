@@ -2,21 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+<<<<<<< HEAD
+=======
 import { publishInvitation, getWhatsAppShareUrl } from '../lib/publishInvitation';
+>>>>>>> b37e485b2070558996eef7ca9cdaeebe3aa2634c
 import { fetchPremiumStatus } from '../lib/premium';
 import '../Styles/createInvitation.css';
 import './Dashboard.css';
 
-
 export default function Dashboard() {
-  
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [invitationCount, setInvitationCount] = useState(0);
+<<<<<<< HEAD
+=======
   const [recentInvites, setRecentInvites] = useState([]);
   const [publishingId, setPublishingId] = useState(null);
   const [publishModal, setPublishModal] = useState(null);
   const [copied, setCopied] = useState(false);
+>>>>>>> b37e485b2070558996eef7ca9cdaeebe3aa2634c
   const [premium, setPremium] = useState(null);
   const isPremium = Boolean(premium?.is_premium);
 
@@ -26,7 +30,6 @@ export default function Dashboard() {
     { key: 'drafts', label: 'Saved Drafts', value: 0, icon: <DraftIcon />, accent: '#fb923c' },
     { key: 'downloads', label: 'Downloads', value: 0, icon: <DownloadIcon />, accent: '#f472b6' },
   ];
-
 
   useEffect(() => {
     if (!user) return;
@@ -48,6 +51,8 @@ export default function Dashboard() {
     fetchPremiumStatus().then(setPremium);
   }, [user]);
 
+<<<<<<< HEAD
+=======
 
   async function handlePublish(invite) {
     setPublishingId(invite.id);
@@ -103,6 +108,7 @@ export default function Dashboard() {
     return r.public_slug || r.editor_state?.publish_info?.public_slug;
   }
 
+>>>>>>> b37e485b2070558996eef7ca9cdaeebe3aa2634c
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
@@ -150,8 +156,6 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-
-
       </div>
     </div>
   );

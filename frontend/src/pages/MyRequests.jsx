@@ -128,7 +128,14 @@ export default function MyRequests() {
       alert('Could not rename this request. Please try again.');
       return;
     }
-    setRequests((prev) =>  async function handlePublish(request) {
+    setRequests((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, event_name: name } : r))
+    );
+    setEditingId(null);
+    setEditName('');
+  }
+
+  async function handlePublish(request) {
     // A public page needs a saved snapshot of the card WITH its text
     // (preview_url). That snapshot is only made in the editor, so if it's
     // missing, send the user to the editor to review and publish from there.
@@ -140,13 +147,6 @@ export default function MyRequests() {
     setPublishingId(request.id);
     try {
       const res = await publishInvitation(request.id);
-      prev.map((r) => (r.id === requestId ? { ...r, event_name: name } : r))
-    );
-    setEditingId(null);
-    setEditName('');
-  }
-
-
       const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
       const publicUrl = `${SITE_URL}${res.public_url}`;
       setPublishModal({

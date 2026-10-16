@@ -264,9 +264,10 @@ export default function Editor() {
     }
     setIsPublishing(true);
     try {
-      if (editor.isDirty) {
-        await editor.save();
-      }
+      // Always save first so the published page gets a fresh snapshot of the
+      // card WITH your text on it (stored as preview_url). Without this, the
+      // public page falls back to the plain base image and shows no text.
+      await editor.save();
       const res = await publishInvitation(request.id);
       const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
       const fullUrl = `${SITE_URL}${res.public_url}`;
